@@ -12,3 +12,5 @@ class Collaborator(Base):
     password_hash = Column(String(128), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     role = relationship("Role", back_populates="collaborators")
+    clients = relationship("Client", back_populates="sales_contact")
+    events = relationship("Event", back_populates="support_contact")
