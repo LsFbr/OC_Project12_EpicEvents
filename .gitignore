@@ -1,3 +1,4 @@
 venv_OC12/
 .env
 __pycache__/
+.pytest_cache/
