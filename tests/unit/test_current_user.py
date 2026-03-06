@@ -1,5 +1,4 @@
 import pytest
-from types import SimpleNamespace
 
 from epicevents.auth.current_user import get_current_user
 
@@ -30,6 +29,9 @@ class FakeSession:
         pass
 
 
+def raise_invalid_token():
+    raise Exception("Invalid token")
+
 
 def test_get_current_user_no_token(monkeypatch):
 
@@ -43,7 +45,7 @@ def test_get_current_user_invalid_token(monkeypatch):
 
     monkeypatch.setattr("epicevents.auth.current_user.load_token", lambda: "fake-token")
 
-    monkeypatch.setattr("epicevents.auth.current_user.decode_token", lambda token: (_ for _ in ()).throw(Exception("Invalid token")))
+    monkeypatch.setattr("epicevents.auth.current_user.decode_token", raise_invalid_token)
 
     with pytest.raises(Exception):
         get_current_user()
