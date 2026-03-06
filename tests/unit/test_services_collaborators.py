@@ -1,23 +1,8 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from epicevents.models.base import Base
 from epicevents.models.role import Role
 from epicevents.services.collaborators import create_collaborator
 from epicevents.security.passwords import verify_password
-
-
-@pytest.fixture
-def session():
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    s = SessionLocal()
-    try:
-        yield s
-    finally:
-        s.close()
 
 
 @pytest.fixture
