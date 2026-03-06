@@ -12,23 +12,15 @@ def seeded_contracts(session):
     ])
     session.commit()
 
-class FakeRole:
-    def __init__(self):
-        self.name = "fake_role"
-
-class FakeUser:
-    def __init__(self):
-        self.role = FakeRole()
-
 def raise_authentication_failed():
     raise Exception("Authentication failed")
 
 def raise_no_permission(role, action):
     raise Exception("No permission")
 
-def test_get_all_contracts_ok(session, seeded_contracts, monkeypatch):
+def test_get_all_contracts_ok(session, seeded_contracts, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
     
 
@@ -39,9 +31,9 @@ def test_get_all_contracts_ok(session, seeded_contracts, monkeypatch):
     assert contracts[2].total_amount == 3000
 
 
-def test_get_all_contracts_authentication_failed(session, seeded_contracts, monkeypatch):
+def test_get_all_contracts_authentication_failed(session, seeded_contracts, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", raise_authentication_failed)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
     with pytest.raises(Exception):
         get_all_contracts(session)
@@ -55,17 +47,17 @@ def test_get_all_contracts_no_user(session, seeded_contracts, monkeypatch):
         get_all_contracts(session)
 
 
-def test_get_all_contracts_no_permission(session, seeded_contracts, monkeypatch):
+def test_get_all_contracts_no_permission(session, seeded_contracts, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", raise_no_permission)
     with pytest.raises(Exception):
         get_all_contracts(session)
         
 
-def test_get_all_contracts_no_contracts(session, monkeypatch):
+def test_get_all_contracts_no_contracts(session, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
     contracts = get_all_contracts(session)
     assert len(contracts) == 0

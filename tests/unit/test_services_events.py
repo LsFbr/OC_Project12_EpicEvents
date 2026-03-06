@@ -14,23 +14,15 @@ def seeded_events(session):
     ])
     session.commit()
 
-class FakeRole:
-    def __init__(self):
-        self.name = "fake_role"
-
-class FakeUser:
-    def __init__(self):
-        self.role = FakeRole()
-
 def raise_authentication_failed():
     raise Exception("Authentication failed")
 
 def raise_no_permission(role, action):
     raise Exception("No permission")
 
-def test_get_all_events_ok(session, seeded_events, monkeypatch):
+def test_get_all_events_ok(session, seeded_events, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
     
 
@@ -41,9 +33,9 @@ def test_get_all_events_ok(session, seeded_events, monkeypatch):
     assert events[2].title == "Event 3"
 
 
-def test_get_all_events_authentication_failed(session, seeded_events, monkeypatch):
+def test_get_all_events_authentication_failed(session, seeded_events, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.require_authentication", raise_authentication_failed)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
     with pytest.raises(Exception):
         get_all_events(session)
@@ -57,17 +49,17 @@ def test_get_all_events_no_user(session, seeded_events, monkeypatch):
         get_all_events(session)
 
 
-def test_get_all_events_no_permission(session, seeded_events, monkeypatch):
+def test_get_all_events_no_permission(session, seeded_events, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
     with pytest.raises(Exception):
         get_all_events(session)
         
 
-def test_get_all_events_no_events(session, monkeypatch):
+def test_get_all_events_no_events(session, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: FakeUser())
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
     events = get_all_events(session)
     assert len(events) == 0

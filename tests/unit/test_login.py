@@ -3,59 +3,29 @@ import pytest
 from epicevents.auth.login import login
 
 
-class FakeUser:
-    def __init__(self, email="test@test.com", password_hash="hashed", user_id=1):
-        self.email = email
-        self.password_hash = password_hash
-        self.id = user_id
 
 
-class FakeQuery:
-    def __init__(self, user):
-        self.user = user
 
-    def filter_by(self, **kwargs):
-        return self
+def test_login_user_not_found(monkeypatch, fake_session):
 
-    def first(self):
-        return self.user
-
-
-class FakeSession:
-    def __init__(self, user):
-        self.user = user
-
-    def query(self, model):
-        return FakeQuery(self.user)
-
-    def close(self):
-        pass
-
-
-def test_login_user_not_found(monkeypatch):
-
-    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: FakeSession(None))
+    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
 
     with pytest.raises(Exception):
         login("test@test.com", "password")
 
 
-def test_login_wrong_password(monkeypatch):
+def test_login_wrong_password(monkeypatch, fake_session):
 
-    user = FakeUser()
-
-    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: FakeSession(user))
+    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
     monkeypatch.setattr("epicevents.auth.login.verify_password", lambda password, hash: False)
 
     with pytest.raises(Exception):
         login("test@test.com", "password")
 
 
-def test_login_success(monkeypatch):
+def test_login_success(monkeypatch, fake_session):
 
-    user = FakeUser()
-
-    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: FakeSession(user))
+    monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
     monkeypatch.setattr("epicevents.auth.login.verify_password", lambda password, hash: True)
     monkeypatch.setattr("epicevents.auth.login.generate_token", lambda user: "fake-token")
 

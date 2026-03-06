@@ -1,16 +1,6 @@
-import pytest
-from pathlib import Path
 
 from epicevents.auth.token_storage import get_token_path, save_token, load_token, delete_token
 
-
-@pytest.fixture
-def fake_home(tmp_path, monkeypatch):
-    """
-    Replace Path.home() with a temporary directory.
-    """
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    return tmp_path
 
 def test_get_token_path_returns_correct_path(fake_home):
     token_path = get_token_path()
