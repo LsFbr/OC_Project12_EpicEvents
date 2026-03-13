@@ -7,7 +7,6 @@ COLLAB_UPDATE = "collaborator:update"
 COLLAB_DELETE = "collaborator:delete"
 
 CLIENT_CREATE = "client:create"
-CLIENT_UPDATE_ANY = "client:update:any"
 CLIENT_UPDATE_OWNED = "client:update:owned"
 
 CONTRACT_CREATE = "contract:create"
@@ -15,7 +14,6 @@ CONTRACT_UPDATE_ANY = "contract:update:any"
 CONTRACT_UPDATE_OWNED = "contract:update:owned"
 
 EVENT_CREATE = "event:create"
-EVENT_UPDATE_ANY = "event:update:any"
 EVENT_UPDATE_ASSIGNED = "event:update:assigned"
 EVENT_ASSIGN_SUPPORT = "event:assign_support"
 
