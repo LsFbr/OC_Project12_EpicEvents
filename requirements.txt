@@ -1,6 +1,7 @@
 argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
 cffi==2.0.0
+click==8.3.1
 colorama==0.4.6
 cryptography==46.0.5
 greenlet==3.3.1
