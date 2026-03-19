@@ -9,6 +9,7 @@ from epicevents.security.passwords import hash_password
 from epicevents.auth.utils import require_authentication
 from epicevents.security.permissions import READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE, require_permission
 from epicevents.auth.current_user import get_current_user
+from epicevents.constants import PASSWORD_MIN_LENGTH
 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -19,19 +20,18 @@ def get_all_collaborators(session: Session) -> list[Collaborator]:
     user = get_current_user()
     require_permission(user.role.name, READ_ALL)
 
-    result = session.execute(select(Collaborator))
-    return result.scalars().all()
+    collaborators = session.execute(select(Collaborator))
+    return collaborators.scalars().all()
 
 
 def create_collaborator(
     session: Session,
-    employee_number: str,
+    employee_number: int,
     full_name: str,
     email: str,
     role_name: str,
     plain_password: str,
 ) -> Collaborator:
-    employee_number = (employee_number or "").strip()
     full_name = (full_name or "").strip()
     email = (email or "").strip().lower()
     role_name = (role_name or "").strip().upper()
@@ -42,11 +42,25 @@ def create_collaborator(
 
     if not employee_number:
         raise ValueError("employee_number is required")
+    if not isinstance(employee_number, int):
+        raise ValueError("employee_number must be an integer")
+
     if not full_name:
         raise ValueError("full_name is required")
-    if not email or not _EMAIL_RE.match(email):
+    if len(full_name) > 64:
+        raise ValueError("full_name must be less than 64 characters")
+
+    if not email:
+        raise ValueError("email is required")
+    if len(email) > 128:
+        raise ValueError("email must be less than 128 characters")
+    if not _EMAIL_RE.match(email):
         raise ValueError("email is invalid")
-    if len(plain_password or "") < 8:
+
+    if not role_name:
+        raise ValueError("role_name is required")
+
+    if len(plain_password or "") < PASSWORD_MIN_LENGTH:
         raise ValueError("password too short")
 
     role = session.query(Role).filter(Role.name == role_name).one_or_none()
@@ -74,16 +88,17 @@ def create_collaborator(
 
 def update_collaborator(
     session: Session,
-    employee_number: str,
+    employee_number: int,
     **fields: Any,
 ) -> Collaborator:
-    employee_number = (employee_number or "").strip()
     require_authentication()
     user = get_current_user()
     require_permission(user.role.name, COLLAB_UPDATE)
 
     if not employee_number:
         raise ValueError("employee_number is required")
+    if not isinstance(employee_number, int):
+        raise ValueError("employee_number must be an integer")
     if not fields:
         raise ValueError("no fields to update")
 
@@ -95,6 +110,8 @@ def update_collaborator(
         full_name = (fields["full_name"] or "").strip()
         if not full_name:
             raise ValueError("full_name is required")
+        if len(full_name) > 64:
+            raise ValueError("full_name must be less than 64 characters")
         collaborator.full_name = full_name
 
     if "email" in fields:
@@ -103,6 +120,8 @@ def update_collaborator(
             raise ValueError("email is required")
         if not _EMAIL_RE.match(email):
             raise ValueError("email is invalid")
+        if len(email) > 128:
+            raise ValueError("email must be less than 128 characters")
         existing = session.query(Collaborator).filter(Collaborator.email == email).one_or_none()
         if existing is not None and existing.id != collaborator.id:
             raise ValueError("email already exists")
@@ -122,7 +141,7 @@ def update_collaborator(
         plain_password = (fields["plain_password"] or "").strip()
         if not plain_password:
             raise ValueError("password is required")
-        if len(plain_password) < 8:
+        if len(plain_password) < PASSWORD_MIN_LENGTH:
             raise ValueError("password too short")
 
         collaborator.password_hash = hash_password(plain_password)
@@ -134,9 +153,8 @@ def update_collaborator(
 
 def delete_collaborator(
     session: Session,
-    employee_number: str,
+    employee_number: int,
 ) -> None:
-    employee_number = (employee_number or "").strip()
 
     require_authentication()
     user = get_current_user()
@@ -144,6 +162,8 @@ def delete_collaborator(
 
     if not employee_number:
         raise ValueError("employee_number is required")
+    if not isinstance(employee_number, int):
+        raise ValueError("employee_number must be an integer")
 
     collaborator = (
         session.query(Collaborator)
@@ -155,3 +175,4 @@ def delete_collaborator(
 
     session.delete(collaborator)
     session.commit()
+    return collaborator
