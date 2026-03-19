@@ -44,6 +44,9 @@ class FakeQuery:
     def first(self):
         return self.user
 
+    def options(self, *args):
+        return self
+
 
 class FakeSession:
     def __init__(self, user):
