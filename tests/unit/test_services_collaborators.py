@@ -13,9 +13,9 @@ def seeded_roles(session):
 @pytest.fixture
 def seeded_collaborators(session):
     session.add_all([
-        Collaborator(employee_number="1", full_name="Collab one", email="collabone@example.com", role_id=1, password_hash="hashed"),
-        Collaborator(employee_number="2", full_name="Collab two", email="collabtwo@example.com", role_id=2, password_hash="hashed"),
-        Collaborator(employee_number="3", full_name="Collab three", email="collabthree@example.com", role_id=3, password_hash="hashed"),
+        Collaborator(employee_number=1, full_name="Collab one", email="collabone@example.com", role_id=1, password_hash="hashed"),
+        Collaborator(employee_number=2, full_name="Collab two", email="collabtwo@example.com", role_id=2, password_hash="hashed"),
+        Collaborator(employee_number=3, full_name="Collab three", email="collabthree@example.com", role_id=3, password_hash="hashed"),
     ])
     session.commit()
 
