@@ -19,6 +19,7 @@ def prompt_text(label: str, required: bool = True, max_length: int | None = None
         prompt_label = f"{label}*"
     else:
         prompt_label = label
+
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip()
 
@@ -48,6 +49,7 @@ def prompt_email(label: str, required: bool = True) -> str | None:
         prompt_label = f"{label}*"
     else:
         prompt_label = label
+
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip().lower()
 
@@ -81,6 +83,7 @@ def prompt_password(label: str, required: bool = True) -> str | None:
         prompt_label = f"{label}*"
     else:
         prompt_label = label
+
     while True:
         value = click.prompt(prompt_label, hide_input=True, default="", show_default=False).strip()
 
@@ -114,6 +117,7 @@ def prompt_int(label: str, required: bool = True, min_value: int | None = 0) -> 
         prompt_label = f"{label}*"
     else:
         prompt_label = label
+
     while True:
         raw = click.prompt(prompt_label, default="", show_default=False)
 
@@ -149,7 +153,6 @@ def prompt_role(label: str, required: bool = True) -> str | None:
         prompt_label = f"{label}*"
     else:
         prompt_label = label
-    role_choice = click.Choice(ROLE_NAMES, case_sensitive=False)
 
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip()
@@ -160,10 +163,17 @@ def prompt_role(label: str, required: bool = True) -> str | None:
                 continue
             return None
 
-        try:
-            return role_choice.convert(value, None, None)
-        except click.BadParameter:
-            click.echo(
-                f"{label} must be one of: {', '.join(ROLE_NAMES)}.",
-                err=True,
-            )
+        if value.upper() not in ROLE_NAMES:
+            click.echo(f"{label} must be one of: {', '.join(ROLE_NAMES)}.", err=True)
+            continue
+
+        return value.upper()
+
+        #try:
+        #    role_choice = click.Choice(ROLE_NAMES, case_sensitive=False)
+        #    return role_choice.convert(value, None, None)
+        #except click.BadParameter:
+        #    click.echo(
+        #        f"{label} must be one of: {', '.join(ROLE_NAMES)}.",
+        #        err=True,
+        #    )
