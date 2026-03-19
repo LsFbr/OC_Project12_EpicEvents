@@ -22,7 +22,7 @@ def test_decode_token_invalid_token():
 def test_decode_token_expired(monkeypatch, fake_user):
     from epicevents.auth import jwt as jwt_module
 
-    monkeypatch.setattr(jwt_module, "TOKEN_EXPIRATION_HOURS", -1)
+    monkeypatch.setattr(jwt_module, "JWT_TOKEN_EXPIRATION_HOURS", -1)
 
     token = generate_token(fake_user)
 
