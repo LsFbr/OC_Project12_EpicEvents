@@ -85,7 +85,7 @@ def test_create_collaborator_ok(session, seeded_roles, monkeypatch, fake_user):
 
     collaborator = create_collaborator(
         session=session,
-        employee_number="4",
+        employee_number=4,
         full_name="Collab four",
         email="CollabFour@example.com",
         role_name="SALES",
@@ -105,7 +105,7 @@ def test_create_collaborator_rejects_duplicate_email(session, seeded_roles, seed
     with pytest.raises(ValueError, match="email already exists"):
         create_collaborator(
             session=session,
-            employee_number="1004",
+            employee_number=1004,
             full_name="Collab four",
             email="CollabThree@example.com",
             role_name="SUPPORT",
@@ -122,10 +122,27 @@ def test_create_collaborator_rejects_duplicate_employee_number(session, seeded_r
     with pytest.raises(ValueError, match="employee_number already exists"):
         create_collaborator(
             session=session,
-            employee_number="3",
+            employee_number=3,
             full_name="Collab",
             email="Collab@example.com",
             role_name="SUPPORT",
+            plain_password="S3cretPwd!",
+        )
+
+
+def test_create_collaborator_with_no_employee_number(session, seeded_roles, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    with pytest.raises(ValueError, match="employee_number is required"):
+        create_collaborator(
+            session=session,
+            employee_number=None,
+            full_name="Collab",
+            email="collab@example.com",
+            role_name="SALES",
             plain_password="S3cretPwd!",
         )
 
@@ -136,10 +153,10 @@ def test_create_collaborator_with_invalid_employee_number(session, seeded_roles,
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
 
-    with pytest.raises(ValueError, match="employee_number is required"):
+    with pytest.raises(ValueError, match="employee_number must be an integer"):
         create_collaborator(
             session=session,
-            employee_number="",
+            employee_number="not-an-integer",
             full_name="Collab",
             email="collab@example.com",
             role_name="SALES",
@@ -147,7 +164,7 @@ def test_create_collaborator_with_invalid_employee_number(session, seeded_roles,
         )
 
 
-def test_create_collaborator_with_invalid_full_name(session, seeded_roles, monkeypatch, fake_user):
+def test_create_collaborator_with_no_full_name(session, seeded_roles, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
@@ -156,9 +173,43 @@ def test_create_collaborator_with_invalid_full_name(session, seeded_roles, monke
     with pytest.raises(ValueError, match="full_name is required"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="",
             email="collab@example.com",
+            role_name="SALES",
+            plain_password="S3cretPwd!",
+        )
+
+
+def test_create_collaborator_with_too_long_full_name(session, seeded_roles, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    with pytest.raises(ValueError, match="full_name must be less than 64 characters"):
+        create_collaborator(
+            session=session,
+            employee_number=4,
+            full_name="A" * 65,
+            email="collab@example.com",
+            role_name="SALES",
+            plain_password="S3cretPwd!",
+        )
+
+
+def test_create_collaborator_with_no_email(session, seeded_roles, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    with pytest.raises(ValueError, match="email is required"):
+        create_collaborator(
+            session=session,
+            employee_number=4,
+            full_name="Collab",
+            email="",
             role_name="SALES",
             plain_password="S3cretPwd!",
         )
@@ -173,7 +224,7 @@ def test_create_collaborator_with_invalid_email(session, seeded_roles, monkeypat
     with pytest.raises(ValueError, match="email is invalid"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="Collab",
             email="not-an-email",
             role_name="SALES",
@@ -181,20 +232,37 @@ def test_create_collaborator_with_invalid_email(session, seeded_roles, monkeypat
         )
 
 
-def test_create_collaborator_with_too_short_password(session, seeded_roles, monkeypatch, fake_user):
+def test_create_collaborator_with_too_long_email(session, seeded_roles, monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
 
-    with pytest.raises(ValueError, match="password too short"):
+    with pytest.raises(ValueError, match="email must be less than 128 characters"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
+            full_name="Collab",
+            email="a" * 117 + "@example.com",
+            role_name="SALES",
+            plain_password="S3cretPwd!",
+        )
+
+
+def test_create_collaborator_with_no_role_name(session, seeded_roles, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    with pytest.raises(ValueError, match="role_name is required"):
+        create_collaborator(
+            session=session,
+            employee_number=4,
             full_name="Collab",
             email="collab@example.com",
-            role_name="SALES",
-            plain_password="short",
+            role_name="",
+            plain_password="S3cretPwd!",
         )
 
 
@@ -207,12 +275,31 @@ def test_create_collaborator_with_invalid_role_name(session, seeded_roles, monke
     with pytest.raises(ValueError, match="unknown role"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="Collab",
             email="collab@example.com",
             role_name="UNKNOWN",
             plain_password="S3cretPwd!",
         )
+
+def test_create_collaborator_with_too_short_password(session, seeded_roles, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    with pytest.raises(ValueError, match="password too short"):
+        create_collaborator(
+            session=session,
+            employee_number=4,
+            full_name="Collab",
+            email="collab@example.com",
+            role_name="SALES",
+            plain_password="short",
+        )
+
+
+
 
 
 def test_create_collaborator_authentication_failed(session, seeded_roles, monkeypatch, fake_user):
@@ -224,7 +311,7 @@ def test_create_collaborator_authentication_failed(session, seeded_roles, monkey
     with pytest.raises(Exception, match="Authentication failed"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="Collab",
             email="collab@example.com",
             role_name="SALES",
@@ -241,7 +328,7 @@ def test_create_collaborator_no_user(session, seeded_roles, monkeypatch):
     with pytest.raises(Exception, match="User no longer exists"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="Collab",
             email="collab@example.com",
             role_name="SALES",
@@ -258,7 +345,7 @@ def test_create_collaborator_no_permission(session, seeded_roles, monkeypatch, f
     with pytest.raises(Exception, match="No permission"):
         create_collaborator(
             session=session,
-            employee_number="4",
+            employee_number=4,
             full_name="Collab",
             email="collab@example.com",
             role_name="SALES",
@@ -273,11 +360,11 @@ def test_update_collaborator_ok(session, seeded_roles, seeded_collaborators, mon
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed_updated")
 
-    collaborator_to_update = session.query(Collaborator).filter(Collaborator.employee_number == "1").one()
+    collaborator_to_update = session.query(Collaborator).filter(Collaborator.employee_number == 1).one()
     
     collaborator_updated = update_collaborator(
         session=session,
-        employee_number="1",
+        employee_number=1,
         full_name="Collab one updated",
         email="collaboneupdated@example.com",
         role_name="SUPPORT",
@@ -298,7 +385,7 @@ def test_update_collaborator_authentication_failed(session, seeded_collaborators
     with pytest.raises(Exception, match="Authentication failed"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             full_name="Collab one updated",
         )
 
@@ -311,7 +398,7 @@ def test_update_collaborator_no_user(session, seeded_collaborators, monkeypatch,
     with pytest.raises(Exception, match="User no longer exists"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             full_name="Collab one updated",
         )
 
@@ -324,7 +411,7 @@ def test_update_collaborator_no_permission(session, seeded_collaborators, monkey
     with pytest.raises(Exception, match="No permission"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             full_name="Collab one updated",
         )
 
@@ -337,7 +424,20 @@ def test_update_collaborator_no_employee_number(session, seeded_collaborators, m
     with pytest.raises(ValueError, match="employee_number is required"):
         update_collaborator(
             session=session,
-            employee_number="",
+            employee_number=None,
+            full_name="Collab one updated",
+        )
+
+
+def test_update_collaborator_invalid_employee_number(session, seeded_collaborators, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+
+    with pytest.raises(ValueError, match="employee_number must be an integer"):
+        update_collaborator(
+            session=session,
+            employee_number="not-an-integer",
             full_name="Collab one updated",
         )
 
@@ -350,7 +450,7 @@ def test_update_collaborator_rejects_no_fields(session, seeded_collaborators, mo
     with pytest.raises(ValueError, match="no fields to update"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
         )
 
 
@@ -362,7 +462,7 @@ def test_update_collaborator_rejects_collaborator_not_found(session, seeded_coll
     with pytest.raises(ValueError, match="collaborator not found"):
         update_collaborator(
             session=session,
-            employee_number="100",
+            employee_number=100,
             full_name="Collab one updated",
         )
 
@@ -375,8 +475,21 @@ def test_update_collaborator_rejects_no_full_name(session, seeded_collaborators,
     with pytest.raises(ValueError, match="full_name is required"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             full_name="",
+        )
+
+
+def test_update_collaborator_rejects_too_long_full_name(session, seeded_collaborators, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+
+    with pytest.raises(ValueError, match="full_name must be less than 64 characters"):
+        update_collaborator(
+            session=session,
+            employee_number=1,
+            full_name="A" * 65,
         )
 
 
@@ -388,7 +501,7 @@ def test_update_collaborator_rejects_no_email(session, seeded_collaborators, mon
     with pytest.raises(ValueError, match="email is required"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             email="",
         )
 
@@ -401,8 +514,21 @@ def test_update_collaborator_rejects_invalid_email(session, seeded_collaborators
     with pytest.raises(ValueError, match="email is invalid"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             email="not-an-email",
+        )
+
+
+def test_update_collaborator_rejects_too_long_email(session, seeded_collaborators, monkeypatch, fake_user):
+    monkeypatch.setattr("epicevents.services.collaborators.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
+
+    with pytest.raises(ValueError, match="email must be less than 128 characters"):
+        update_collaborator(
+            session=session,
+            employee_number=1,
+            email="a" * 117 + "@example.com",
         )
 
 
@@ -414,7 +540,7 @@ def test_update_collaborator_rejects_existing_email(session, seeded_collaborator
     with pytest.raises(ValueError, match="email already exists"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             email="collabtwo@example.com"
         )
 
@@ -427,7 +553,7 @@ def test_update_collaborator_rejects_no_role_name(session, seeded_collaborators,
     with pytest.raises(ValueError, match="role_name is required"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             role_name="",
         )
 
@@ -440,7 +566,7 @@ def test_update_collaborator_rejects_invalid_role_name(session, seeded_collabora
     with pytest.raises(ValueError, match="unknown role"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             role_name="UNKNOWN",
         )
 
@@ -453,7 +579,7 @@ def test_update_collaborator_rejects_no_password(session, seeded_collaborators, 
     with pytest.raises(ValueError, match="password is required"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             plain_password="",
         )
         
@@ -466,7 +592,7 @@ def test_update_collaborator_rejects_too_short_password(session, seeded_collabor
     with pytest.raises(ValueError, match="password too short"):
         update_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
             plain_password="short",
         )
 
@@ -479,12 +605,12 @@ def test_delete_collaborator_ok(session, seeded_collaborators, monkeypatch, fake
 
     delete_collaborator(
         session=session,
-        employee_number="1",
+        employee_number=1,
     )
 
     collaborator = (
         session.query(Collaborator)
-        .filter(Collaborator.employee_number == "1")
+        .filter(Collaborator.employee_number == 1)
         .one_or_none()
     )
     assert collaborator is None
@@ -498,7 +624,7 @@ def test_delete_collaborator_authentication_failed(session, seeded_collaborators
     with pytest.raises(Exception, match="Authentication failed"):
         delete_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
         )
 
 
@@ -510,7 +636,7 @@ def test_delete_collaborator_no_user(session, seeded_collaborators, monkeypatch)
     with pytest.raises(Exception, match="User no longer exists"):
         delete_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
         )
 
 
@@ -522,7 +648,7 @@ def test_delete_collaborator_no_permission(session, seeded_collaborators, monkey
     with pytest.raises(Exception, match="No permission"):
         delete_collaborator(
             session=session,
-            employee_number="1",
+            employee_number=1,
         )
 
 
@@ -534,7 +660,7 @@ def test_delete_collaborator_rejects_missing_employee_number(session, seeded_col
     with pytest.raises(ValueError, match="employee_number is required"):
         delete_collaborator(
             session=session,
-            employee_number="",
+            employee_number=None,
         )
 
 
@@ -546,5 +672,5 @@ def test_delete_collaborator_rejects_collaborator_not_found(session, seeded_coll
     with pytest.raises(ValueError, match="collaborator not found"):
         delete_collaborator(
             session=session,
-            employee_number="999",
+            employee_number=999,
         )
