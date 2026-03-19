@@ -1,3 +1,5 @@
+from sqlalchemy.orm import joinedload
+
 from epicevents.auth.token_storage import load_token
 from epicevents.auth.jwt import decode_token
 from epicevents.db.session import SessionLocal
@@ -15,7 +17,8 @@ def get_current_user() -> Collaborator:
     session = SessionLocal()
 
     try:
-        user = session.query(Collaborator).filter_by(id=payload["user_id"]).first()
+        # Load the collaborator with the role
+        user = session.query(Collaborator).options(joinedload(Collaborator.role)).filter_by(id=payload["user_id"]).first()
 
         if user is None:
             raise Exception("User no longer exists")
