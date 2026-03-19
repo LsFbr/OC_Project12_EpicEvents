@@ -5,9 +5,7 @@ from epicevents.models.role import Role
 from epicevents.models.collaborator import Collaborator
 from epicevents.security.passwords import hash_password
 import os
-
-ROLE_NAMES = ["SALES", "SUPPORT", "MANAGEMENT"]
-
+from epicevents.constants import ROLE_NAMES
 
 def seed_roles(session):
     """
