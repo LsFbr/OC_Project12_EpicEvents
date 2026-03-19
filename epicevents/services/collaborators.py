@@ -40,7 +40,7 @@ def create_collaborator(
     user = get_current_user()
     require_permission(user.role.name, COLLAB_CREATE)
 
-    if not employee_number:
+    if employee_number is None:
         raise ValueError("employee_number is required")
     if not isinstance(employee_number, int):
         raise ValueError("employee_number must be an integer")
@@ -95,7 +95,7 @@ def update_collaborator(
     user = get_current_user()
     require_permission(user.role.name, COLLAB_UPDATE)
 
-    if not employee_number:
+    if employee_number is None:
         raise ValueError("employee_number is required")
     if not isinstance(employee_number, int):
         raise ValueError("employee_number must be an integer")
@@ -154,13 +154,13 @@ def update_collaborator(
 def delete_collaborator(
     session: Session,
     employee_number: int,
-) -> None:
+) -> Collaborator:
 
     require_authentication()
     user = get_current_user()
     require_permission(user.role.name, COLLAB_DELETE)
 
-    if not employee_number:
+    if employee_number is None:
         raise ValueError("employee_number is required")
     if not isinstance(employee_number, int):
         raise ValueError("employee_number must be an integer")
