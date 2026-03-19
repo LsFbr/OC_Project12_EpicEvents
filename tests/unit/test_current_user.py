@@ -48,6 +48,6 @@ def test_get_current_user_success(monkeypatch, fake_session):
 
     monkeypatch.setattr("epicevents.auth.current_user.SessionLocal", lambda: fake_session)
 
-    result = get_current_user()
+    user = get_current_user()
 
-    assert result.id == 1
+    assert user.id == 1
