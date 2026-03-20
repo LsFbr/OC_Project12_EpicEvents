@@ -7,6 +7,11 @@ from epicevents.auth.logout import logout
 from epicevents.services.collaborators import (
 get_all_collaborators, create_collaborator, update_collaborator, delete_collaborator
 )
+from epicevents.services.clients import (
+    get_all_clients,
+    create_client,
+    update_client,
+)
 from epicevents.cli.prompt_helpers import prompt_text, prompt_email, prompt_password, prompt_role, prompt_int
 
 @click.group()
@@ -140,5 +145,136 @@ def collaborators_delete_command():
         click.echo(f"Collaborator {collaborator.full_name} deleted successfully.")
     except Exception as e:
         click.echo(f"Collaborators delete failed: {e}", err=True)
+    finally:
+        session.close()
+
+
+@cli.group()
+def clients():
+    """Clients management."""
+    pass
+
+@clients.command(name="list")
+def clients_list_command():
+    """List all clients."""
+    session = SessionLocal()
+    try:
+        clients = get_all_clients(session)
+
+        if not clients:
+            click.echo("No clients found.")
+            return
+
+
+        click.echo("ID | Name | Email | Phone | Company | Informations | Sales Contact ID | Sales Contact Name")
+        click.echo("--------------------------------------------------------")
+        for client in clients:
+            informations = client.informations if client.informations else "N/A"
+            click.echo(
+                f"{client.id} | "
+                f"{client.name} | "
+                f"{client.email} | "
+                f"{client.phone_number} | "
+                f"{client.company_name} | "
+                f"{informations} | "
+                f"{client.sales_contact_id} | "
+                f"{client.sales_contact.full_name}"
+            )
+    except Exception as e:
+        click.echo(f"Clients list failed: {e}", err=True)
+    finally:
+        session.close()
+
+@clients.command(name="create")
+def clients_create_command():
+    """Create a new client. (Requires SALES role)"""
+    session = SessionLocal()
+    try:
+        click.echo("Enter the details for the new client (marked with * are required):")
+
+        name = prompt_text("Name", max_length=64)
+        email = prompt_email("Email")
+        phone_number = prompt_text("Phone Number", max_length=20)
+        company_name = prompt_text("Company Name", max_length=64)
+        informations = prompt_text("Informations", required=False)
+
+        client = create_client(
+            session,
+            informations,
+            name,
+            email,
+            phone_number,
+            company_name,
+        )
+
+        informations = client.informations if client.informations else "N/A"
+
+        click.echo(f"Client {client.name} created successfully.")
+        click.echo("ID | Name | Email | Phone | Company | Informations | Sales Contact ID | Sales Contact Name")
+        click.echo("--------------------------------------------------------")
+        click.echo(
+            f"{client.id} | "
+            f"{client.name} | "
+            f"{client.email} | "
+            f"{client.phone_number} | "
+            f"{client.company_name} | "
+            f"{informations} | "
+            f"{client.sales_contact_id} | "
+            f"{client.sales_contact.full_name}"
+        )
+    except Exception as e:
+        click.echo(f"Clients create failed: {e}", err=True)
+    finally:
+        session.close()
+
+@clients.command(name="update")
+def clients_update_command():
+    """Update a client. (Requires SALES role and to be the sales contact of the client)"""
+    session = SessionLocal()
+    try:
+        click.echo("Enter the details for the client to update (marked with * are required):")
+        fields = {}
+
+        client_id = prompt_int("Client ID")
+        name = prompt_text("Name", required=False, max_length=64)
+        email = prompt_email("Email", required=False)
+        phone_number = prompt_text("Phone Number", required=False, max_length=20)
+        company_name = prompt_text("Company Name", required=False, max_length=64)
+        informations = prompt_text("Informations", required=False)
+
+        if name:
+            fields["name"] = name
+        if email:
+            fields["email"] = email
+        if phone_number:
+            fields["phone_number"] = phone_number
+        if company_name:
+            fields["company_name"] = company_name
+        if informations:
+            fields["informations"] = informations
+
+        client = update_client(session, client_id, **fields)
+
+        informations_value = client.informations if client.informations else "N/A"
+        sales_contact_id = client.sales_contact_id if client.sales_contact_id is not None else "N/A"
+        sales_contact_name = (
+            client.sales_contact.full_name if client.sales_contact is not None else "N/A"
+        )
+
+        click.echo(f"Client {client.name} updated successfully.")
+        click.echo("ID | Name | Email | Phone | Company | Informations | Sales Contact ID | Sales Contact Name")
+        click.echo("--------------------------------------------------------")
+        click.echo(
+            f"{client.id} | "
+            f"{client.name} | "
+            f"{client.email} | "
+            f"{client.phone_number} | "
+            f"{client.company_name} | "
+            f"{informations_value} | "
+            f"{sales_contact_id} | "
+            f"{sales_contact_name}"
+        )
+    except Exception as e:
+        click.echo(f"Clients update failed: {e}", err=True)
     finally:
         session.close()
