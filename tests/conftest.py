@@ -27,10 +27,12 @@ class FakeRole:
 
 
 class FakeUser:
-    def __init__(self, user_id=1, role="fake_role"):
+    def __init__(self, user_id=1, employee_number=1, full_name="Test User", email="test@test.com", role_name="fake_role"):
         self.id = user_id
-        self.role = FakeRole(role)
-        self.email = "test@test.com"
+        self.role = FakeRole(role_name)
+        self.email = email
+        self.full_name = full_name
+        self.employee_number = employee_number
         self.password_hash = "hashed"
 
 
