@@ -24,9 +24,9 @@ def seeded_contracts(session, seeded_clients):
     ])
     session.commit()
 
-management_user = FakeUser(user_id=99, role="MANAGEMENT")
-sales_user = FakeUser(user_id=1, role="SALES")
-support_user = FakeUser(user_id=10, role="SUPPORT")
+management_user = FakeUser(user_id=99, role_name="MANAGEMENT")
+sales_user = FakeUser(user_id=1, role_name="SALES")
+support_user = FakeUser(user_id=10, role_name="SUPPORT")
 
 def raise_authentication_failed():
     raise Exception("Authentication failed")
