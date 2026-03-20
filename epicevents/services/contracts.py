@@ -27,13 +27,39 @@ def _to_decimal(value: Any, field_name: str) -> Decimal:
         raise ValueError(f"{field_name} must be a valid decimal amount")
 
 
-def get_all_contracts(session: Session) -> list[Contract]:
+def get_all_contracts(
+    session: Session,
+    signed: bool = False,
+    not_signed: bool = False,
+    unpaid: bool = False,
+    paid: bool = False,
+) -> list[Contract]:
     require_authentication()
 
     user = get_current_user()
     require_permission(user.role.name, READ_ALL)
 
-    result = session.execute(select(Contract))
+    statement = select(Contract)
+
+    if signed and not_signed:
+        raise ValueError("signed and not_signed filters cannot be used together")
+
+    if paid and unpaid:
+        raise ValueError("paid and unpaid filters cannot be used together")
+
+    if signed:
+        statement = statement.where(Contract.is_signed == True)
+
+    if not_signed:
+        statement = statement.where(Contract.is_signed == False)
+
+    if unpaid:
+        statement = statement.where(Contract.rest_amount > 0)
+
+    if paid:
+        statement = statement.where(Contract.rest_amount == 0)
+
+    result = session.execute(statement)
     return result.scalars().all()
 
 
