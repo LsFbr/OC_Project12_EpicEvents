@@ -86,7 +86,7 @@ def collaborators_list_command():
 
 @collaborators.command(name="create")
 def collaborators_create_command():
-    """Create a new collaborator (Requires MANAGEMENT role)."""
+    """Create a new collaborator (MANAGEMENT)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -120,7 +120,7 @@ def collaborators_create_command():
 
 @collaborators.command(name="update")
 def collaborators_update_command():
-    """Update a collaborator (Requires MANAGEMENT role)."""
+    """Update a collaborator (MANAGEMENT)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -163,7 +163,7 @@ def collaborators_update_command():
 
 @collaborators.command(name="delete")
 def collaborators_delete_command():
-    """Delete a collaborator (Requires MANAGEMENT role)."""
+    """Delete a collaborator (MANAGEMENT)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -226,7 +226,7 @@ def clients_list_command():
 
 @clients.command(name="create")
 def clients_create_command():
-    """Create a new client (Requires SALES role)."""
+    """Create a new client (SALES)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -274,7 +274,7 @@ def clients_create_command():
 
 @clients.command(name="update")
 def clients_update_command():
-    """Update a client (Requires SALES role and to be the sales contact of the client)."""
+    """Update a client (SALES and owner)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -384,7 +384,7 @@ def contracts_list_command(signed: bool, not_signed: bool, unpaid: bool, paid: b
 
 @contracts.command(name="create")
 def contracts_create_command():
-    """Create a new contract (Requires SALES role and to be the sales contact of the client)."""
+    """Create a new contract (SALES and owner)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -430,7 +430,7 @@ def contracts_create_command():
 
 @contracts.command(name="update")
 def contracts_update_command():
-    """Update a contract (Requires Management role or SALES role and to be the sales contact of the client)."""
+    """Update a contract (MANAGEMENT, or SALES and owner)."""
     session = SessionLocal()
     try:
         require_authentication()
