@@ -74,9 +74,9 @@ def raise_no_user():
 def raise_no_permission(role, action):
     raise Exception("No permission")
 
-sales_user = FakeUser(user_id=1, role="SALES")
-support_user = FakeUser(user_id=2, role="SUPPORT")
-management_user = FakeUser(user_id=3, role="MANAGEMENT")
+sales_user = FakeUser(user_id=1, role_name="SALES")
+support_user = FakeUser(user_id=2, role_name="SUPPORT")
+management_user = FakeUser(user_id=3, role_name="MANAGEMENT")
 
 
 # get_all_events tests
