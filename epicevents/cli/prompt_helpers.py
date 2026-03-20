@@ -169,11 +169,33 @@ def prompt_role(label: str, required: bool = True) -> str | None:
 
         return value.upper()
 
-        #try:
-        #    role_choice = click.Choice(ROLE_NAMES, case_sensitive=False)
-        #    return role_choice.convert(value, None, None)
-        #except click.BadParameter:
-        #    click.echo(
-        #        f"{label} must be one of: {', '.join(ROLE_NAMES)}.",
-        #        err=True,
-        #    )
+
+def prompt_bool(label: str, required: bool = True) -> bool | None:
+    """
+    Prompt the user for a boolean input.
+    Args:
+        label: The label to display for the input.
+        required: Whether the input is required.
+    Returns:
+        The input value.
+    """
+    if required:
+        prompt_label = f"{label}*"
+    else:
+        prompt_label = label
+
+    while True:
+        value = click.prompt(prompt_label + " (yes/no)", default="", show_default=False).strip().lower()
+
+        if not value:
+            if required:
+                click.echo(f"{label} is required.", err=True)
+                continue
+            return None
+
+        if value in {"yes", "y", "true", "1"}:
+            return True
+        if value in {"no", "n", "false", "0"}:
+            return False
+
+        click.echo(f"{label} must be yes or no.", err=True)
