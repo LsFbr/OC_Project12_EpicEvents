@@ -7,6 +7,14 @@ from epicevents.auth.token_storage import save_token
 
 
 def login(email: str, password: str) -> str:
+    """
+    Login a collaborator and return a JWT token.
+    Args:
+        email: The email of the collaborator.
+        password: The password of the collaborator.
+    Returns:
+        The JWT token.
+    """
 
     session = SessionLocal()
 
