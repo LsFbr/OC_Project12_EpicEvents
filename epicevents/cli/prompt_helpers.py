@@ -23,10 +23,10 @@ def prompt_text(label: str, required: bool = True, max_length: int | None = None
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip()
 
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
         if not value:
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
             return None
 
         if max_length is not None and len(value) > max_length:
@@ -53,10 +53,10 @@ def prompt_email(label: str, required: bool = True) -> str | None:
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip().lower()
 
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
         if not value:
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
             return None
 
         if len(value) > 128:
@@ -87,10 +87,10 @@ def prompt_password(label: str, required: bool = True) -> str | None:
     while True:
         value = click.prompt(prompt_label, hide_input=True, default="", show_default=False).strip()
 
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
         if not value:
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
             return None
 
         if len(value) < PASSWORD_MIN_LENGTH:
@@ -121,11 +121,9 @@ def prompt_int(label: str, required: bool = True, min_value: int | None = 0) -> 
     while True:
         raw = click.prompt(prompt_label, default="", show_default=False)
 
-        if raw == "":
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
-            return None
+        if raw == "" and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
 
         try:
             value = int(str(raw).strip())
@@ -157,10 +155,10 @@ def prompt_role(label: str, required: bool = True) -> str | None:
     while True:
         value = click.prompt(prompt_label, default="", show_default=False).strip()
 
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
         if not value:
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
             return None
 
         if value.upper() not in ROLE_NAMES:
@@ -187,10 +185,10 @@ def prompt_bool(label: str, required: bool = True) -> bool | None:
     while True:
         value = click.prompt(prompt_label + " (yes/no)", default="", show_default=False).strip().lower()
 
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
         if not value:
-            if required:
-                click.echo(f"{label} is required.", err=True)
-                continue
             return None
 
         if value in {"yes", "y", "true", "1"}:
