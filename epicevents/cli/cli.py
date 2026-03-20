@@ -8,11 +8,12 @@ from epicevents.services.collaborators import (
 get_all_collaborators, create_collaborator, update_collaborator, delete_collaborator
 )
 from epicevents.services.clients import (
-    get_all_clients,
-    create_client,
-    update_client,
+    get_all_clients, create_client, update_client,
 )
-from epicevents.cli.prompt_helpers import prompt_text, prompt_email, prompt_password, prompt_role, prompt_int
+from epicevents.services.contracts import (
+    get_all_contracts, create_contract, update_contract
+)
+from epicevents.cli.prompt_helpers import prompt_text, prompt_email, prompt_password, prompt_role, prompt_int, prompt_bool
 
 @click.group()
 def cli():
@@ -276,5 +277,123 @@ def clients_update_command():
         )
     except Exception as e:
         click.echo(f"Clients update failed: {e}", err=True)
+    finally:
+        session.close()
+
+
+@cli.group()
+def contracts():
+    """Contracts management."""
+    pass
+
+@contracts.command(name="list")
+def contracts_list_command():
+    """List all contracts."""
+    session = SessionLocal()
+    try:
+        contracts = get_all_contracts(session)
+
+        if not contracts:
+            click.echo("No contracts found.")
+            return
+
+        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo("-----------------------------------------------------------------")
+        for contract in contracts:
+            is_signed = "Yes" if contract.is_signed else "No"
+            click.echo(
+                f"{contract.id} | "
+                f"{contract.total_amount} | "
+                f"{contract.rest_amount} | "
+                f"{is_signed} | "
+                f"{contract.client_id} | "
+                f"{contract.client.name} | "
+                f"{contract.client.sales_contact_id} | "
+                f"{contract.client.sales_contact.full_name}"
+            )
+    except Exception as e:
+        click.echo(f"Contracts list failed: {e}", err=True)
+    finally:
+        session.close()
+
+@contracts.command(name="create")
+def contracts_create_command():
+    """Create a new contract. (Requires SALES role and to be the sales contact of the client)"""
+    session = SessionLocal()
+    try:
+        click.echo("Enter the details for the new contract (marked with * are required):")
+
+        total_amount = prompt_text("Total Amount")
+        rest_amount = prompt_text("Rest Amount")
+        is_signed = prompt_bool("Is Signed")
+        client_id = prompt_int("Client ID")
+
+        contract = create_contract(
+            session,
+            client_id,
+            total_amount,
+            rest_amount,
+            is_signed,
+        )
+
+        is_signed = "Yes" if contract.is_signed else "No"
+
+        click.echo(f"Contract {contract.id} created successfully.")
+        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo("-----------------------------------------------------------------")
+        click.echo(
+            f"{contract.id} | "
+            f"{contract.total_amount} | "
+            f"{contract.rest_amount} | "
+            f"{is_signed} | "
+            f"{contract.client_id} | "
+            f"{contract.client.name} | "
+            f"{contract.client.sales_contact_id} | "
+            f"{contract.client.sales_contact.full_name}"
+        )
+    except Exception as e:
+        click.echo(f"Contracts create failed: {e}", err=True)
+    finally:
+        session.close()
+
+@contracts.command(name="update")
+def contracts_update_command():
+    """Update a contract. (Requires SALES role and to be the sales contact of the client)"""
+    session = SessionLocal()
+    try:
+        click.echo("Enter the details for the contract to update (marked with * are required):")
+        fields = {}
+
+        contract_id = prompt_int("Contract ID")
+        total_amount = prompt_text("Total Amount", required=False)
+        rest_amount = prompt_text("Rest Amount", required=False)
+        is_signed = prompt_bool("Is Signed", required=False)
+
+        if total_amount is not None:
+            fields["total_amount"] = total_amount
+        if rest_amount is not None:
+            fields["rest_amount"] = rest_amount
+        if is_signed is not None:
+            fields["is_signed"] = is_signed
+
+        contract = update_contract(session, contract_id, **fields)
+
+        is_signed = "Yes" if contract.is_signed else "No"
+
+        click.echo(f"Contract {contract.id} updated successfully.")
+        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo("-----------------------------------------------------------------")
+        click.echo(
+            f"{contract.id} | "
+            f"{contract.total_amount} | "
+            f"{contract.rest_amount} | "
+            f"{is_signed} | "
+            f"{contract.client_id} | "
+            f"{contract.client.name} | "
+            f"{contract.client.sales_contact_id} | "
+            f"{contract.client.sales_contact.full_name}"
+        )
+    except Exception as e:
+        click.echo(f"Contracts update failed: {e}", err=True)
     finally:
         session.close()
