@@ -63,7 +63,6 @@ def create_event(
     date_start: datetime,
     date_end: datetime,
     contract_id: int,
-    support_contact_id: int | None = None,
 ) -> Event:
     title = (title or "").strip()
     notes = (notes or "").strip()
@@ -103,9 +102,6 @@ def create_event(
     if contract.client.sales_contact_id != user.id:
         raise PermissionError("you are not the sales contact of this contract")
 
-    if support_contact_id is not None:
-        _require_support_collaborator(session, support_contact_id)
-
     event = Event(
         title=title,
         notes=notes,
@@ -113,7 +109,7 @@ def create_event(
         attendees=attendees,
         date_start=date_start,
         date_end=date_end,
-        support_contact_id=support_contact_id,
+        support_contact_id=None,
         contract_id=contract.id,
     )
 
