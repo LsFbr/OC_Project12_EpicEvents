@@ -1,5 +1,6 @@
 import click
 import re
+from datetime import datetime
 
 from epicevents.constants import PASSWORD_MIN_LENGTH, ROLE_NAMES
 
@@ -119,14 +120,16 @@ def prompt_int(label: str, required: bool = True, min_value: int | None = 0) -> 
         prompt_label = label
 
     while True:
-        raw = click.prompt(prompt_label, default="", show_default=False)
+        raw = click.prompt(prompt_label, default="", show_default=False).strip()
 
-        if raw == "" and required:
-            click.echo(f"{label} is required.", err=True)
-            continue
+        if raw == "":
+            if required:
+                click.echo(f"{label} is required.", err=True)
+                continue
+            return None
 
         try:
-            value = int(str(raw).strip())
+            value = int(raw)
         except ValueError:
             click.echo(f"{label} must be an integer.", err=True)
             continue
@@ -197,3 +200,33 @@ def prompt_bool(label: str, required: bool = True) -> bool | None:
             return False
 
         click.echo(f"{label} must be yes or no.", err=True)
+
+
+def prompt_datetime(label: str, required: bool = True) -> datetime | None:
+    """
+    Prompt the user for a datetime input.
+    Expected format: YYYY-MM-DD HH:MM
+    Args:
+        label: The label to display for the input.
+        required: Whether the input is required.
+    Returns:
+        The input value.
+    """
+    if required:
+        prompt_label = f"{label}*"
+    else:
+        prompt_label = label
+
+    while True:
+        value = click.prompt(prompt_label + " (YYYY-MM-DD HH:MM)", default="", show_default=False).strip()
+
+        if not value and required:
+            click.echo(f"{label} is required.", err=True)
+            continue
+        if not value:
+            return None
+
+        try:
+            return datetime.strptime(value, "%Y-%m-%d %H:%M")
+        except ValueError:
+            click.echo(f"{label} must match format YYYY-MM-DD HH:MM.", err=True)
