@@ -504,7 +504,18 @@ def events():
     pass
 
 @events.command(name="list")
-def events_list_command():
+@click.option(
+    "--support-contact-id",
+    type=int,
+    default=None,
+    help="Filter events by support collaborator id (MANAGEMENT).",
+)
+@click.option(
+    "--mine",
+    is_flag=True,
+    help="Show only events assigned to the connected support collaborator.",
+)
+def events_list_command(support_contact_id: int | None, mine: bool):
     """List all events."""
     session = SessionLocal()
     try:
@@ -512,7 +523,11 @@ def events_list_command():
         user = get_current_user()
         require_permission(user.role.name, READ_ALL)
 
-        events = get_all_events(session)
+        events = get_all_events(
+            session,
+            support_contact_id=support_contact_id,
+            assigned_to_me=mine,
+        )
 
         if not events:
             click.echo("No events found.")
@@ -521,7 +536,7 @@ def events_list_command():
         click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
         click.echo("--------------------------------------------------------------------------------------------------------------")
         for event in events:
-            support_contact_id = event.support_contact_id if event.support_contact_id is not None else "N/A"
+            support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
             support_contact_name = (
                 event.support_contact.full_name if event.support_contact is not None else "N/A"
             )
@@ -534,46 +549,7 @@ def events_list_command():
                 f"{event.date_start} | "
                 f"{event.date_end} | "
                 f"{event.contract_id} | "
-                f"{support_contact_id} | "
-                f"{support_contact_name}"
-            )
-    except Exception as e:
-        click.echo(f"Events list failed: {e}", err=True)
-    finally:
-        session.close()
-
-@events.command(name="list")
-def events_list_command():
-    """List all events."""
-    session = SessionLocal()
-    try:
-        require_authentication()
-        user = get_current_user()
-        require_permission(user.role.name, READ_ALL)
-
-        events = get_all_events(session)
-
-        if not events:
-            click.echo("No events found.")
-            return
-
-        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
-        click.echo("--------------------------------------------------------------------------------------------------------------")
-        for event in events:
-            support_contact_id = event.support_contact_id if event.support_contact_id is not None else "N/A"
-            support_contact_name = (
-                event.support_contact.full_name if event.support_contact is not None else "N/A"
-            )
-
-            click.echo(
-                f"{event.id} | "
-                f"{event.title} | "
-                f"{event.location} | "
-                f"{event.attendees} | "
-                f"{event.date_start} | "
-                f"{event.date_end} | "
-                f"{event.contract_id} | "
-                f"{support_contact_id} | "
+                f"{support_contact_id_value} | "
                 f"{support_contact_name}"
             )
     except Exception as e:
