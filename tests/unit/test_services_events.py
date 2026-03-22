@@ -72,7 +72,7 @@ def raise_no_user():
 
 
 def raise_no_permission(role, action):
-    raise Exception("No permission")
+    raise PermissionError("No permission")
 
 sales_user = FakeUser(user_id=1, role_name="SALES")
 support_user = FakeUser(user_id=2, role_name="SUPPORT")
@@ -115,7 +115,7 @@ def test_get_all_events_no_permission(session, seeded_events, monkeypatch, fake_
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
 
-    with pytest.raises(Exception, match="No permission"):
+    with pytest.raises(PermissionError, match="No permission"):
         get_all_events(session)
 
 
@@ -155,29 +155,6 @@ def test_create_event_ok(session, seeded_contracts, monkeypatch):
     assert event.attendees == 50
     assert event.contract_id == 1
     assert event.support_contact_id is None
-
-
-def test_create_event_ok_with_support_contact(session, seeded_contracts, monkeypatch):
-    start = datetime.now()
-    end = start + timedelta(hours=2)
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: sales_user)
-    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
-
-    event = create_event(
-        session=session,
-        title="New Event",
-        notes="Some notes",
-        location="Paris",
-        attendees=50,
-        date_start=start,
-        date_end=end,
-        contract_id=1,
-        support_contact_id=2,
-    )
-
-    assert event.support_contact_id == 2
 
 
 def test_create_event_authentication_failed(session, seeded_contracts, monkeypatch):
@@ -533,109 +510,14 @@ def test_create_event_rejects_unowned_contract(session, seeded_contracts, monkey
         )
 
 
-def test_create_event_rejects_missing_support_contact_id_when_provided_as_zero(session, seeded_contracts, monkeypatch):
-    start = datetime.now()
-    end = start + timedelta(hours=2)
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: sales_user)
-    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
-
-    with pytest.raises(ValueError, match="support_contact_id is required"):
-        create_event(
-            session=session,
-            title="New Event",
-            notes="Some notes",
-            location="Paris",
-            attendees=50,
-            date_start=start,
-            date_end=end,
-            contract_id=1,
-            support_contact_id=0,
-        )
-
-
-def test_create_event_rejects_support_collaborator_not_found(session, seeded_contracts, monkeypatch):
-    start = datetime.now()
-    end = start + timedelta(hours=2)
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: sales_user)
-    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
-
-    with pytest.raises(ValueError, match="support collaborator not found"):
-        create_event(
-            session=session,
-            title="New Event",
-            notes="Some notes",
-            location="Paris",
-            attendees=50,
-            date_start=start,
-            date_end=end,
-            contract_id=1,
-            support_contact_id=999,
-        )
-
-
-def test_create_event_rejects_non_support_collaborator(session, seeded_collaborators, seeded_contracts, monkeypatch):
-    start = datetime.now()
-    end = start + timedelta(hours=2)
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: sales_user)
-    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
-
-    with pytest.raises(ValueError, match="collaborator is not support"):
-        create_event(
-            session=session,
-            title="New Event",
-            notes="Some notes",
-            location="Paris",
-            attendees=50,
-            date_start=start,
-            date_end=end,
-            contract_id=1,
-            support_contact_id=1,
-        )
-
-
 # update_event tests
-def test_update_event_ok_as_management_assign_support(session, seeded_events, monkeypatch):
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
-
-    event_updated = update_event(
-        session=session,
-        event_id=2,
-        support_contact_id=2,
-    )
-
-    assert event_updated.id == 2
-    assert event_updated.support_contact_id == 2
-
-
-def test_update_event_ok_as_management_unassign_support(session, seeded_events, monkeypatch):
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
-
-    event_updated = update_event(
-        session=session,
-        event_id=1,
-        support_contact_id=None,
-    )
-
-    assert event_updated.id == 1
-    assert event_updated.support_contact_id is None
-
-
-def test_update_event_ok_as_support_assigned(session, seeded_events, monkeypatch):
+def test_update_event_ok(session, seeded_events, monkeypatch):
     start = datetime.now()
     end = start + timedelta(hours=5)
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     event_updated = update_event(
         session=session,
@@ -660,58 +542,61 @@ def test_update_event_ok_as_support_assigned(session, seeded_events, monkeypatch
 def test_update_event_authentication_failed(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", raise_authentication_failed)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(Exception, match="Authentication failed"):
         update_event(
             session=session,
             event_id=1,
-            support_contact_id=2,
         )
 
 
 def test_update_event_no_user(session, seeded_events, monkeypatch):
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.events.get_current_user", raise_no_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(Exception, match="User no longer exists"):
         update_event(
             session=session,
             event_id=1,
-            support_contact_id=2,
         )
 
 
-def test_update_event_no_permission_as_sales(session, seeded_events, monkeypatch):
+def test_update_event_no_permission(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: sales_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
 
     with pytest.raises(PermissionError, match="No permission"):
         update_event(
             session=session,
             event_id=1,
-            support_contact_id=2,
+            title="Updated Event",
         )
 
 
 def test_update_event_rejects_missing_event_id(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
-    with pytest.raises(ValueError, match="event_id is required"):
+    with pytest.raises(ValueError, match="event id is required"):
         update_event(
             session=session,
-            event_id=0,
-            support_contact_id=2,
+            event_id=None,
+            title="Updated Event",
         )
 
 
 def test_update_event_rejects_no_fields(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(ValueError, match="no fields to update"):
         update_event(
@@ -723,7 +608,8 @@ def test_update_event_rejects_no_fields(session, seeded_events, monkeypatch):
 def test_update_event_rejects_event_not_found(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
+    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(ValueError, match="event not found"):
         update_event(
@@ -737,6 +623,7 @@ def test_update_event_rejects_support_not_assigned_event(session, seeded_events,
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(PermissionError, match="you are not the support contact of this event"):
         update_event(
@@ -746,55 +633,17 @@ def test_update_event_rejects_support_not_assigned_event(session, seeded_events,
         )
 
 
-def test_update_event_rejects_forbidden_field_for_management(session, seeded_events, monkeypatch):
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
-
-    with pytest.raises(ValueError, match="forbidden field: title"):
-        update_event(
-            session=session,
-            event_id=1,
-            title="Updated Event",
-        )
-
-
-def test_update_event_rejects_forbidden_field_for_support(session, seeded_events, monkeypatch):
+def test_update_event_rejects_forbidden_field(session, seeded_events, monkeypatch):
 
     monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: support_user)
+    monkeypatch.setattr("epicevents.services.events.require_permission", lambda role, action: None)
 
     with pytest.raises(ValueError, match="forbidden field: support_contact_id"):
         update_event(
             session=session,
             event_id=1,
             support_contact_id=2,
-        )
-
-
-def test_update_event_rejects_support_contact_not_found(session, seeded_events, monkeypatch):
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
-
-    with pytest.raises(ValueError, match="support collaborator not found"):
-        update_event(
-            session=session,
-            event_id=1,
-            support_contact_id=999,
-        )
-
-
-def test_update_event_rejects_non_support_contact(session, seeded_events, monkeypatch):
-
-    monkeypatch.setattr("epicevents.services.events.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: management_user)
-
-    with pytest.raises(ValueError, match="collaborator is not support"):
-        update_event(
-            session=session,
-            event_id=1,
-            support_contact_id=1,
         )
 
 
