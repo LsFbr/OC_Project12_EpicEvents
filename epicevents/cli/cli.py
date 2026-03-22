@@ -8,6 +8,7 @@ from epicevents.security.permissions import (
     READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE,
     CLIENT_CREATE, CLIENT_UPDATE_OWNED,
     CONTRACT_CREATE, CONTRACT_UPDATE_ANY, CONTRACT_UPDATE_OWNED,
+    EVENT_CREATE, EVENT_UPDATE_ASSIGNED, EVENT_ASSIGN_SUPPORT
 )
 
 from epicevents.auth.login import login
@@ -21,7 +22,18 @@ from epicevents.services.clients import (
 from epicevents.services.contracts import (
     get_all_contracts, create_contract, update_contract
 )
-from epicevents.cli.prompt_helpers import prompt_text, prompt_email, prompt_password, prompt_role, prompt_int, prompt_bool
+from epicevents.services.events import (
+    get_all_events, create_event, update_event, assign_support,
+)
+from epicevents.cli.prompt_helpers import (
+    prompt_text,
+    prompt_email,
+    prompt_password,
+    prompt_role,
+    prompt_int,
+    prompt_bool,
+    prompt_datetime,
+)
 
 @click.group()
 def cli():
@@ -479,5 +491,240 @@ def contracts_update_command():
             click.echo(f"Contracts update failed: {e}", err=True)
     except Exception as e:
         click.echo(f"Contracts update failed: {e}", err=True)
+    finally:
+        session.close()
+
+
+@cli.group()
+def events():
+    """Events management."""
+    pass
+
+@events.command(name="list")
+def events_list_command():
+    """List all events."""
+    session = SessionLocal()
+    try:
+        require_authentication()
+        user = get_current_user()
+        require_permission(user.role.name, READ_ALL)
+
+        events = get_all_events(session)
+
+        if not events:
+            click.echo("No events found.")
+            return
+
+        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
+        click.echo("--------------------------------------------------------------------------------------------------------------")
+        for event in events:
+            support_contact_id = event.support_contact_id if event.support_contact_id is not None else "N/A"
+            support_contact_name = (
+                event.support_contact.full_name if event.support_contact is not None else "N/A"
+            )
+
+            click.echo(
+                f"{event.id} | "
+                f"{event.title} | "
+                f"{event.location} | "
+                f"{event.attendees} | "
+                f"{event.date_start} | "
+                f"{event.date_end} | "
+                f"{event.contract_id} | "
+                f"{support_contact_id} | "
+                f"{support_contact_name}"
+            )
+    except Exception as e:
+        click.echo(f"Events list failed: {e}", err=True)
+    finally:
+        session.close()
+
+@events.command(name="list")
+def events_list_command():
+    """List all events."""
+    session = SessionLocal()
+    try:
+        require_authentication()
+        user = get_current_user()
+        require_permission(user.role.name, READ_ALL)
+
+        events = get_all_events(session)
+
+        if not events:
+            click.echo("No events found.")
+            return
+
+        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
+        click.echo("--------------------------------------------------------------------------------------------------------------")
+        for event in events:
+            support_contact_id = event.support_contact_id if event.support_contact_id is not None else "N/A"
+            support_contact_name = (
+                event.support_contact.full_name if event.support_contact is not None else "N/A"
+            )
+
+            click.echo(
+                f"{event.id} | "
+                f"{event.title} | "
+                f"{event.location} | "
+                f"{event.attendees} | "
+                f"{event.date_start} | "
+                f"{event.date_end} | "
+                f"{event.contract_id} | "
+                f"{support_contact_id} | "
+                f"{support_contact_name}"
+            )
+    except Exception as e:
+        click.echo(f"Events list failed: {e}", err=True)
+    finally:
+        session.close()
+
+@events.command(name="create")
+def events_create_command():
+    """Create a new event (Requires SALES role and to own the contract's client)."""
+    session = SessionLocal()
+    try:
+        require_authentication()
+        user = get_current_user()
+        require_permission(user.role.name, EVENT_CREATE)
+
+        click.echo("Enter the details for the new event (marked with * are required):")
+
+        title = prompt_text("Title", max_length=64)
+        notes = prompt_text("Notes", required=False)
+        location = prompt_text("Location", max_length=128)
+        attendees = prompt_int("Attendees", min_value=0)
+        date_start = prompt_datetime("Date Start")
+        date_end = prompt_datetime("Date End")
+        contract_id = prompt_int("Contract ID")
+        support_contact_id = prompt_int("Support Contact ID", required=False)
+
+        event = create_event(
+            session,
+            title=title,
+            notes=notes or "",
+            location=location,
+            attendees=attendees,
+            date_start=date_start,
+            date_end=date_end,
+            contract_id=contract_id,
+            support_contact_id=support_contact_id,
+        )
+
+        support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
+        support_contact_name = (
+            event.support_contact.full_name if event.support_contact is not None else "N/A"
+        )
+
+        click.echo(f"Event {event.title} created successfully.")
+        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
+        click.echo("--------------------------------------------------------------------------------------------------------------")
+        click.echo(
+            f"{event.id} | "
+            f"{event.title} | "
+            f"{event.location} | "
+            f"{event.attendees} | "
+            f"{event.date_start} | "
+            f"{event.date_end} | "
+            f"{event.contract_id} | "
+            f"{support_contact_id_value} | "
+            f"{support_contact_name}"
+        )
+    except Exception as e:
+        click.echo(f"Events create failed: {e}", err=True)
+    finally:
+        session.close()
+
+@events.command(name="update")
+def events_update_command():
+    """Update an event (SUPPORT assigned to the event)."""
+    session = SessionLocal()
+    try:
+        require_authentication()
+        user = get_current_user()
+        require_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
+
+        click.echo("Enter the details for the event to update (marked with * are required):")
+        fields = {}
+
+        event_id = prompt_int("Event ID")
+        title = prompt_text("Title", required=False, max_length=64)
+        notes = prompt_text("Notes", required=False)
+        location = prompt_text("Location", required=False, max_length=128)
+        attendees = prompt_int("Attendees", required=False, min_value=0)
+        date_start = prompt_datetime("Date Start", required=False)
+        date_end = prompt_datetime("Date End", required=False)
+
+        if title is not None:
+            fields["title"] = title
+        if notes is not None:
+            fields["notes"] = notes
+        if location is not None:
+            fields["location"] = location
+        if attendees is not None:
+            fields["attendees"] = attendees
+        if date_start is not None:
+            fields["date_start"] = date_start
+        if date_end is not None:
+            fields["date_end"] = date_end
+
+        event = update_event(session, event_id, **fields)
+
+        support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
+        support_contact_name = (
+            event.support_contact.full_name if event.support_contact is not None else "N/A"
+        )
+
+        click.echo(f"Event {event.title} updated successfully.")
+        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
+        click.echo("--------------------------------------------------------------------------------------------------------------")
+        click.echo(
+            f"{event.id} | "
+            f"{event.title} | "
+            f"{event.location} | "
+            f"{event.attendees} | "
+            f"{event.date_start} | "
+            f"{event.date_end} | "
+            f"{event.contract_id} | "
+            f"{support_contact_id_value} | "
+            f"{support_contact_name}"
+        )
+    except Exception as e:
+        click.echo(f"Events update failed: {e}", err=True)
+    finally:
+        session.close()
+
+@events.command(name="assign-support")
+def events_assign_support_command():
+    """Assign or change the support collaborator of an event (MANAGEMENT)."""
+    session = SessionLocal()
+    try:
+        require_authentication()
+        user = get_current_user()
+        require_permission(user.role.name, EVENT_ASSIGN_SUPPORT)
+
+        click.echo("Enter the details to assign support to an event (marked with * are required):")
+
+        event_id = prompt_int("Event ID")
+        support_contact_id = prompt_int("Support Contact ID", required=False)
+
+        event = assign_support(session, event_id, support_contact_id)
+
+        support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
+        support_contact_name = (
+            event.support_contact.full_name if event.support_contact is not None else "N/A"
+        )
+
+        click.echo(f"Support assignment updated for event {event.title}.")
+        click.echo("ID | Title | Contract ID | Support Contact ID | Support Contact Name")
+        click.echo("------------------------------------------------------------------")
+        click.echo(
+            f"{event.id} | "
+            f"{event.title} | "
+            f"{event.contract_id} | "
+            f"{support_contact_id_value} | "
+            f"{support_contact_name}"
+        )
+    except Exception as e:
+        click.echo(f"Events assign-support failed: {e}", err=True)
     finally:
         session.close()
