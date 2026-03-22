@@ -580,7 +580,7 @@ def events_list_command():
 
 @events.command(name="create")
 def events_create_command():
-    """Create a new event (Requires SALES role and to own the contract's client)."""
+    """Create a new event (SALES and owner of the signed contract)."""
     session = SessionLocal()
     try:
         require_authentication()
@@ -596,7 +596,6 @@ def events_create_command():
         date_start = prompt_datetime("Date Start")
         date_end = prompt_datetime("Date End")
         contract_id = prompt_int("Contract ID")
-        support_contact_id = prompt_int("Support Contact ID", required=False)
 
         event = create_event(
             session,
@@ -607,7 +606,6 @@ def events_create_command():
             date_start=date_start,
             date_end=date_end,
             contract_id=contract_id,
-            support_contact_id=support_contact_id,
         )
 
         support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
