@@ -83,47 +83,47 @@ def test_collaborators_list_command_success(monkeypatch, fake_session):
     echoed = []
 
     collaborator_1 = FakeUser(
+        user_id=2,
         employee_number=1,
         full_name="User One",
         email="userone@example.com",
         role_name="MANAGEMENT",
     )
     collaborator_2 = FakeUser(
+        user_id=3,
         employee_number=2,
         full_name="User Two",
         email="usertwo@example.com",
         role_name="SALES",
     )
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
-    monkeypatch.setattr(
-        "epicevents.cli.cli.get_all_collaborators",
-        lambda session: [collaborator_1, collaborator_2],
-    )
-    monkeypatch.setattr(
-        "epicevents.cli.cli.click.echo",
-        lambda message: echoed.append((message)),
-    )
+    monkeypatch.setattr("epicevents.cli.cli.get_all_collaborators", lambda session: [collaborator_1, collaborator_2])
+    monkeypatch.setattr("epicevents.cli.cli.click.echo", lambda message: echoed.append((message)))
 
     cli_module.collaborators_list_command.callback()
 
     assert echoed == [
-        ("Employee Number | Full Name | Email | Role"),
+        ("ID | Employee Number | Full Name | Email | Role"),
         ("--------------------------------------------------"),
-        ("1 | User One | userone@example.com | MANAGEMENT"),
-        ("2 | User Two | usertwo@example.com | SALES"),
+        ("2 | 1 | User One | userone@example.com | MANAGEMENT"),
+        ("3 | 2 | User Two | usertwo@example.com | SALES"),
     ]
 
 
 def test_collaborators_list_command_no_collaborators(monkeypatch, fake_session):
     echoed = []
 
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
     monkeypatch.setattr("epicevents.cli.cli.get_all_collaborators", lambda session: [])
-    monkeypatch.setattr(
-        "epicevents.cli.cli.click.echo",
-        lambda message: echoed.append((message)),
-    )
+    monkeypatch.setattr("epicevents.cli.cli.click.echo", lambda message: echoed.append((message)))
 
     cli_module.collaborators_list_command.callback()
 
@@ -134,18 +134,19 @@ def test_collaborators_list_command_failure(monkeypatch, fake_session):
     echoed = []
 
     def fake_get_all_collaborators(session):
-        raise Exception("Authentication failed")
+        raise Exception("Faillure Test")
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
     monkeypatch.setattr("epicevents.cli.cli.get_all_collaborators", fake_get_all_collaborators)
-    monkeypatch.setattr(
-        "epicevents.cli.cli.click.echo",
-        lambda message, err=False: echoed.append((message, err)),
-    )
+    monkeypatch.setattr("epicevents.cli.cli.click.echo", lambda message, err=False: echoed.append((message, err)))
 
     cli_module.collaborators_list_command.callback()
 
-    assert echoed == [("Collaborators list failed: Authentication failed", True)]
+    assert echoed == [("Collaborators list failed: Faillure Test", True)]
 
 
 # tests collaborators_create_command
@@ -160,11 +161,17 @@ def test_collaborators_create_command_success(monkeypatch, fake_session):
     )
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda label, max_length: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_role", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda label: None)
+
     monkeypatch.setattr(
         "epicevents.cli.cli.create_collaborator",
         lambda session, employee_number, full_name, email, role, plain_password: collaborator,
@@ -179,9 +186,9 @@ def test_collaborators_create_command_success(monkeypatch, fake_session):
     assert echoed == [
         ("Enter the details for the new collaborator (marked with * are required):"),
         ("Collaborator Collab Four created successfully."),
-        ("Employee Number | Full Name | Email | Role"),
+        ("ID | Employee Number | Full Name | Email | Role"),
         ("--------------------------------------------------"),
-        ("4 | Collab Four | collabfour@example.com | SALES"),
+        ("1 | 4 | Collab Four | collabfour@example.com | SALES"),
     ]
 
 
@@ -189,9 +196,14 @@ def test_collaborators_create_command_failure(monkeypatch, fake_session):
     echoed = []
 
     def fake_create_collaborator(session, employee_number, full_name, email, role, plain_password):
-        raise Exception("password too short")
+        raise Exception("Faillure Test")
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda label, max_length: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda label: None)
@@ -207,7 +219,7 @@ def test_collaborators_create_command_failure(monkeypatch, fake_session):
 
     assert echoed == [
         ("Enter the details for the new collaborator (marked with * are required):", False),
-        ("Collaborators create failed: password too short", True),
+        ("Collaborators create failed: Faillure Test", True),
     ]
 
 
@@ -216,6 +228,7 @@ def test_collaborators_update_command_success(monkeypatch, fake_session):
     echoed = []
 
     collaborator = FakeUser(
+        user_id=1,
         employee_number=1,
         full_name="User One Updated",
         email="useroneupdated@example.com",
@@ -223,6 +236,11 @@ def test_collaborators_update_command_success(monkeypatch, fake_session):
     )
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: 1)
     monkeypatch.setattr(
         "epicevents.cli.cli.prompt_text",
@@ -266,9 +284,9 @@ def test_collaborators_update_command_success(monkeypatch, fake_session):
     assert echoed == [
         ("Enter the details for the collaborator to update (marked with * are required):", False),
         ("Collaborator User One Updated updated successfully.", False),
-        ("Employee Number | Full Name | Email | Role", False),
+        ("ID | Employee Number | Full Name | Email | Role", False),
         ("--------------------------------------------------", False),
-        ("1 | User One Updated | useroneupdated@example.com | SUPPORT", False),
+        ("1 | 1 | User One Updated | useroneupdated@example.com | SUPPORT", False),
     ]
 
 
@@ -276,9 +294,14 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session):
     echoed = []
 
     def fake_update_collaborator(session, employee_number, **fields):
-        raise Exception("collaborator not found")
+        raise Exception("Faillure Test")
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda label, required, max_length: None)
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda label, required: None)
@@ -292,7 +315,7 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session):
 
     assert echoed == [
         ("Enter the details for the collaborator to update (marked with * are required):", False),
-        ("Collaborators update failed: collaborator not found", True),
+        ("Collaborators update failed: Faillure Test", True),
     ]
 
 
@@ -308,6 +331,11 @@ def test_collaborators_delete_command_success(monkeypatch, fake_session):
     )
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: 1)
     monkeypatch.setattr("epicevents.cli.cli.delete_collaborator", lambda session, employee_number: collaborator)
     monkeypatch.setattr("epicevents.cli.cli.click.echo", lambda message: echoed.append((message)))
@@ -324,9 +352,14 @@ def test_collaborators_delete_command_failure(monkeypatch, fake_session):
     echoed = []
 
     def fake_delete_collaborator(session, employee_number):
-        raise Exception("collaborator not found")
+        raise Exception("Faillure Test")
 
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+
+    monkeypatch.setattr("epicevents.cli.cli.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.cli.cli.get_current_user", lambda: FakeUser(role_name="MANAGEMENT"))
+    monkeypatch.setattr("epicevents.cli.cli.require_permission", lambda role_name, action: None)
+
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda label: None)
     monkeypatch.setattr("epicevents.cli.cli.delete_collaborator", fake_delete_collaborator)
     monkeypatch.setattr("epicevents.cli.cli.click.echo", lambda message, err=False: echoed.append((message, err)))
@@ -335,5 +368,5 @@ def test_collaborators_delete_command_failure(monkeypatch, fake_session):
 
     assert echoed == [
         ("Enter the employee number of the collaborator to delete:", False),
-        ("Collaborators delete failed: collaborator not found", True),
+        ("Collaborators delete failed: Faillure Test", True),
     ]
