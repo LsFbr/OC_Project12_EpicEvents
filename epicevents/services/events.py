@@ -12,6 +12,8 @@ from epicevents.security.permissions import (
     EVENT_CREATE,
     EVENT_UPDATE_ASSIGNED,
     EVENT_ASSIGN_SUPPORT,
+    EVENT_FILTER_BY_SUPPORT_CONTACT_ID,
+    EVENT_FILTER_BY_MINE,
     require_permission,
     has_permission,
 )
@@ -38,7 +40,7 @@ def _require_support_collaborator(session: Session, support_contact_id: int) -> 
     if collaborator is None:
         raise ValueError("support collaborator not found")
 
-    if not has_permission(collaborator.role.name, EVENT_UPDATE_ASSIGNED):
+    if collaborator.role.name != "SUPPORT":
         raise ValueError("collaborator is not support")
 
     return collaborator
@@ -57,14 +59,18 @@ def get_all_events(
     if support_contact_id is not None and assigned_to_me:
         raise ValueError("support_contact_id and assigned_to_me cannot be used together")
 
+    if support_contact_id is not None and not has_permission(user.role.name, EVENT_FILTER_BY_SUPPORT_CONTACT_ID):
+        raise PermissionError("only management can filter by support_contact_id")
+
+    if assigned_to_me and not has_permission(user.role.name, EVENT_FILTER_BY_MINE):
+        raise PermissionError("only support can use the mine filter")
+
     statement = select(Event)
 
     if support_contact_id is not None:
         statement = statement.where(Event.support_contact_id == support_contact_id)
 
     if assigned_to_me:
-        if not has_permission(user.role.name, EVENT_UPDATE_ASSIGNED):
-            raise PermissionError("you are not support")
         statement = statement.where(Event.support_contact_id == user.id)
 
     result = session.execute(statement)
