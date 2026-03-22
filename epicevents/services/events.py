@@ -149,9 +149,11 @@ def update_event(
 ) -> Event:
     require_authentication()
     user = get_current_user()
+    require_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
+
 
     if event_id is None:
-        raise ValueError("event_id is required")
+        raise ValueError("event id is required")
     if not fields:
         raise ValueError("no fields to update")
 
@@ -159,7 +161,6 @@ def update_event(
     if event is None:
         raise ValueError("event not found")
 
-    require_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
 
     if event.support_contact_id != user.id:
         raise PermissionError("you are not the support contact of this event")
