@@ -53,4 +53,7 @@ def has_permission(role_name: str, action: str) -> bool:
 
 def require_permission(role_name: str, action: str) -> None:
     if not has_permission(role_name, action):
-        raise PermissionError(f"Permission denied: your role ({role_name}) does not have the permission to {action}")
+        raise PermissionError(
+            f"Permission denied: your role ({role_name}) does not have the permission to {action}. "
+            f"You need the {' or '.join([role for role in PERMISSIONS if action in PERMISSIONS[role]])} role(s) to perform this action."
+        )
