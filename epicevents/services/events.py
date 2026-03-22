@@ -44,13 +44,30 @@ def _require_support_collaborator(session: Session, support_contact_id: int) -> 
     return collaborator
 
 
-def get_all_events(session: Session) -> list[Event]:
+def get_all_events(
+    session: Session,
+    support_contact_id: int | None = None,
+    assigned_to_me: bool = False,
+) -> list[Event]:
     require_authentication()
 
     user = get_current_user()
     require_permission(user.role.name, READ_ALL)
 
-    result = session.execute(select(Event))
+    if support_contact_id is not None and assigned_to_me:
+        raise ValueError("support_contact_id and assigned_to_me cannot be used together")
+
+    statement = select(Event)
+
+    if support_contact_id is not None:
+        statement = statement.where(Event.support_contact_id == support_contact_id)
+
+    if assigned_to_me:
+        if not has_permission(user.role.name, EVENT_UPDATE_ASSIGNED):
+            raise PermissionError("you are not support")
+        statement = statement.where(Event.support_contact_id == user.id)
+
+    result = session.execute(statement)
     return result.scalars().all()
 
 
