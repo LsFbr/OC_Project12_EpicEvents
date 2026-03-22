@@ -131,7 +131,7 @@ def update_event(
     require_authentication()
     user = get_current_user()
 
-    if not event_id:
+    if event_id is None:
         raise ValueError("event_id is required")
     if not fields:
         raise ValueError("no fields to update")
@@ -140,29 +140,16 @@ def update_event(
     if event is None:
         raise ValueError("event not found")
 
-    can_assign_support = has_permission(user.role.name, EVENT_ASSIGN_SUPPORT)
-    can_update_assigned = has_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
+    require_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
 
-    if can_assign_support:
-        allowed_fields = {"support_contact_id"}
-    elif can_update_assigned:
-        if event.support_contact_id != user.id:
-            raise PermissionError("you are not the support contact of this event")
-        allowed_fields = {"title", "notes", "location", "attendees", "date_start", "date_end"}
-    else:
-        raise PermissionError("No permission")
+    if event.support_contact_id != user.id:
+        raise PermissionError("you are not the support contact of this event")
+
+    allowed_fields = {"title", "notes", "location", "attendees", "date_start", "date_end"}
 
     for field_name in fields:
         if field_name not in allowed_fields:
             raise ValueError(f"forbidden field: {field_name}")
-
-    if "support_contact_id" in fields:
-        support_contact_id = fields["support_contact_id"]
-        if support_contact_id is None:
-            event.support_contact_id = None
-        else:
-            collaborator = _require_support_collaborator(session, support_contact_id)
-            event.support_contact_id = collaborator.id
 
     if "title" in fields:
         title = (fields["title"] or "").strip()
@@ -191,7 +178,7 @@ def update_event(
 
     new_date_start = event.date_start
     new_date_end = event.date_end
-    
+
     if "date_start" in fields:
         new_date_start = _require_datetime(fields["date_start"], "date_start")
 
@@ -203,6 +190,32 @@ def update_event(
 
     event.date_start = new_date_start
     event.date_end = new_date_end
+
+    session.commit()
+    session.refresh(event)
+    return event
+
+def assign_support(
+    session: Session,
+    event_id: int,
+    support_contact_id: int | None,
+) -> Event:
+    require_authentication()
+    user = get_current_user()
+    require_permission(user.role.name, EVENT_ASSIGN_SUPPORT)
+
+    if event_id is None:
+        raise ValueError("event_id is required")
+
+    event = session.query(Event).filter(Event.id == event_id).one_or_none()
+    if event is None:
+        raise ValueError("event not found")
+
+    if support_contact_id is None:
+        return event
+
+    collaborator = _require_support_collaborator(session, support_contact_id)
+    event.support_contact_id = collaborator.id
 
     session.commit()
     session.refresh(event)
