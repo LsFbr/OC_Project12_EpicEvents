@@ -80,10 +80,11 @@ def collaborators_list_command():
                 click.echo("No collaborators found.")
                 return
 
-            click.echo("Employee Number | Full Name | Email | Role")
+            click.echo("ID | Employee Number | Full Name | Email | Role")
             click.echo("--------------------------------------------------")
             for collaborator in collaborators:
                 click.echo(
+                    f"{collaborator.id} | "
                     f"{collaborator.employee_number} | "
                     f"{collaborator.full_name} | "
                     f"{collaborator.email} | "
@@ -115,9 +116,10 @@ def collaborators_create_command():
             collaborator = create_collaborator(session, employee_number, full_name, email, role, plain_password)
 
             click.echo(f"Collaborator {collaborator.full_name} created successfully.")
-            click.echo("Employee Number | Full Name | Email | Role")
+            click.echo("ID | Employee Number | Full Name | Email | Role")
             click.echo("--------------------------------------------------")
             click.echo(
+                f"{collaborator.id} | "
                 f"{collaborator.employee_number} | "
                 f"{collaborator.full_name} | "
                 f"{collaborator.email} | "
@@ -158,9 +160,10 @@ def collaborators_update_command():
 
             collaborator = update_collaborator(session, employee_number, **fields)
             click.echo(f"Collaborator {collaborator.full_name} updated successfully.")
-            click.echo("Employee Number | Full Name | Email | Role")
+            click.echo("ID | Employee Number | Full Name | Email | Role")
             click.echo("--------------------------------------------------")
             click.echo(
+                f"{collaborator.id} | "
                 f"{collaborator.employee_number} | "
                 f"{collaborator.full_name} | "
                 f"{collaborator.email} | "
