@@ -7,8 +7,10 @@ from epicevents.security.permissions import (
     require_permission, has_permission,
     READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE,
     CLIENT_CREATE, CLIENT_UPDATE_OWNED,
-    CONTRACT_CREATE, CONTRACT_UPDATE_ANY, CONTRACT_UPDATE_OWNED,
-    EVENT_CREATE, EVENT_UPDATE_ASSIGNED, EVENT_ASSIGN_SUPPORT
+    CONTRACT_CREATE, CONTRACT_UPDATE_ANY, CONTRACT_UPDATE_OWNED, 
+    CONTRACT_FILTER_BY_PAID_UNPAID, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED,
+    EVENT_CREATE, EVENT_UPDATE_ASSIGNED, EVENT_ASSIGN_SUPPORT,
+    EVENT_FILTER_BY_SUPPORT_CONTACT_ID, EVENT_FILTER_BY_MINE,
 )
 
 from epicevents.auth.login import login
@@ -363,6 +365,25 @@ def contracts_list_command(signed: bool, not_signed: bool, unpaid: bool, paid: b
         require_authentication()
         user = get_current_user()
         require_permission(user.role.name, READ_ALL)
+
+        if signed and not_signed:
+            raise ValueError("signed and not_signed filters cannot be used together")
+
+        if paid and unpaid:
+            raise ValueError("paid and unpaid filters cannot be used together")
+
+        if signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
+            raise PermissionError("only sales can filter by signed contracts")
+
+        if not_signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
+            raise PermissionError("only sales can filter by not signed contracts")
+
+        if unpaid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
+            raise PermissionError("only sales can filter by unpaid contracts")
+
+        if paid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
+            raise PermissionError("only sales can filter by paid contracts")
+
         try:
             contracts = get_all_contracts(
                 session,
@@ -522,6 +543,12 @@ def events_list_command(support_contact_id: int | None, mine: bool):
         require_authentication()
         user = get_current_user()
         require_permission(user.role.name, READ_ALL)
+
+        if support_contact_id is not None and not has_permission(user.role.name, EVENT_FILTER_BY_SUPPORT_CONTACT_ID):
+            raise PermissionError("only management can filter by support contact id")
+
+        if mine and not has_permission(user.role.name, EVENT_FILTER_BY_MINE):
+            raise PermissionError("only support can use the mine filter")
 
         events = get_all_events(
             session,
