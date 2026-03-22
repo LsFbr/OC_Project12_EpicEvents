@@ -10,6 +10,8 @@ from epicevents.security.permissions import (
     CONTRACT_CREATE,
     CONTRACT_UPDATE_ANY,
     CONTRACT_UPDATE_OWNED,
+    CONTRACT_FILTER_BY_PAID_UNPAID,
+    CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED,
     require_permission,
     has_permission,
 )
@@ -46,6 +48,18 @@ def get_all_contracts(
 
     if paid and unpaid:
         raise ValueError("paid and unpaid filters cannot be used together")
+
+    if signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
+        raise PermissionError("only sales can filter by signed contracts")
+
+    if not_signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
+        raise PermissionError("only sales can filter by not signed contracts")
+
+    if unpaid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
+        raise PermissionError("only sales can filter by unpaid contracts")
+
+    if paid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
+        raise PermissionError("only sales can filter by paid contracts")
 
     if signed:
         statement = statement.where(Contract.is_signed == True)
