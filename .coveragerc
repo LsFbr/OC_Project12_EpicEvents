@@ -1,0 +1,7 @@
+#pytest --cov=. --cov-report html
+
+[run]
+omit = tests/*
+
+[html]
+directory = reports/coverage
