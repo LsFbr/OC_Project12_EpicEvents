@@ -1,7 +1,7 @@
 import pytest
 
 from epicevents.cli import cli as cli_module
-from conftest import FakeUser, FakeClient, FakeContract, FakeEvent
+from tests.conftest import FakeUser, FakeClient, FakeContract, FakeEvent
 
 
 def capture_echo(monkeypatch):

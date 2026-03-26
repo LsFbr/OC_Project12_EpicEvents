@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 
-from conftest import FakeClient, FakeContract, FakeSession
+from tests.conftest import FakeClient, FakeContract, FakeSession
 
 from epicevents.models.client import Client
 from epicevents.models.contract import Contract

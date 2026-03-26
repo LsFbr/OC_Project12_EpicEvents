@@ -1,6 +1,6 @@
 import pytest
 
-from conftest import FakeSession, FakeUser
+from tests.conftest import FakeSession, FakeUser
 from epicevents.auth.current_user import get_current_user
 from epicevents.models.collaborator import Collaborator
 

@@ -1,6 +1,6 @@
 import pytest
 
-from conftest import FakeClient, FakeSession
+from tests.conftest import FakeClient, FakeSession
 
 from epicevents.models.client import Client
 from epicevents.services.clients import (
