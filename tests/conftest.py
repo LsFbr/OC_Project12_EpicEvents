@@ -100,7 +100,33 @@ class FakeQuery:
         self.items = items
 
     def filter(self, *args, **kwargs):
-        return self
+        filtered = self.items
+
+        for condition in args:
+            left = getattr(condition, "left", None)
+            right = getattr(condition, "right", None)
+            operator = getattr(condition, "operator", None)
+
+            column_name = getattr(left, "name", None)
+            value = getattr(right, "value", right)
+
+            if column_name is None or operator is None:
+                continue
+
+            operator_name = getattr(operator, "__name__", "")
+
+            if operator_name == "eq":
+                filtered = [
+                    item for item in filtered
+                    if getattr(item, column_name, None) == value
+                ]
+            elif operator_name == "ne":
+                filtered = [
+                    item for item in filtered
+                    if getattr(item, column_name, None) != value
+                ]
+
+        return FakeQuery(filtered)
 
     def filter_by(self, **kwargs):
         filtered = self.items
