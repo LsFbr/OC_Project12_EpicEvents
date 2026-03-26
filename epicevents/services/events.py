@@ -215,6 +215,7 @@ def update_event(
     session.refresh(event)
     return event
 
+
 def assign_support(
     session: Session,
     event_id: int,
