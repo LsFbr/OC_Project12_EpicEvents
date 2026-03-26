@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timedelta
 
 from conftest import FakeClient, FakeContract, FakeEvent, FakeSession, FakeUser
-
+from epicevents.security.permissions import EVENT_FILTER_BY_SUPPORT_CONTACT_ID, EVENT_FILTER_BY_MINE
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.contract import Contract
 from epicevents.models.event import Event
@@ -195,7 +195,7 @@ def test_get_all_events_filter_by_support_contact_id_ok(monkeypatch, fake_user, 
     session = FakeSession(execute_items=[event_assigned_to_support])
 
     allow_authenticated_user(monkeypatch, fake_user)
-    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: True)
+    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: action == EVENT_FILTER_BY_SUPPORT_CONTACT_ID)
 
     events = get_all_events(session, support_contact_id=event_assigned_to_support.support_contact_id)
 
@@ -218,7 +218,7 @@ def test_get_all_events_filter_by_mine_ok(monkeypatch, support_user, event_assig
     session = FakeSession(execute_items=[event_assigned_to_support])
 
     allow_authenticated_user(monkeypatch, support_user)
-    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: True)
+    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: action == EVENT_FILTER_BY_MINE)
 
     events = get_all_events(session, assigned_to_me=True)
 
