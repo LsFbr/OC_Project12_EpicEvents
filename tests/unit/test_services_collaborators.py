@@ -1,7 +1,7 @@
 import pytest
 
 from tests.conftest import FakeSession, FakeUser, FakeRole
-
+from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
 from epicevents.services.collaborators import (
@@ -13,15 +13,15 @@ from epicevents.services.collaborators import (
 
 
 def raise_authentication_failed():
-    raise Exception("Authentication failed")
+    raise NotLoggedInError("Authentication failed")
 
 
 def raise_no_user():
-    raise Exception("User no longer exists")
+    raise UserNotFoundError("User no longer exists")
 
 
 def raise_no_permission(role, action):
-    raise PermissionError("No permission")
+    raise BusinessAuthorizationError("No permission")
 
 
 def allow_authenticated_user(monkeypatch, user):
@@ -108,7 +108,7 @@ def test_get_all_collaborators_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         get_all_collaborators(session)
 
 
@@ -119,7 +119,7 @@ def test_get_all_collaborators_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         get_all_collaborators(session)
 
 
@@ -130,7 +130,7 @@ def test_get_all_collaborators_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         get_all_collaborators(session)
 
 
@@ -185,7 +185,7 @@ def test_create_collaborator_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -197,7 +197,7 @@ def test_create_collaborator_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -209,7 +209,7 @@ def test_create_collaborator_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", raise_no_permission)
     monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -218,7 +218,7 @@ def test_create_collaborator_rejects_missing_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number is required"):
+    with pytest.raises(BusinessValidationError, match="employee_number is required"):
         create_collaborator(session, None, "Collab", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -227,7 +227,7 @@ def test_create_collaborator_rejects_invalid_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number must be an integer"):
+    with pytest.raises(BusinessValidationError, match="employee_number must be an integer"):
         create_collaborator(session, "bad", "Collab", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -236,7 +236,7 @@ def test_create_collaborator_rejects_missing_full_name(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="full_name is required"):
+    with pytest.raises(BusinessValidationError, match="full_name is required"):
         create_collaborator(session, 4, "", "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -245,7 +245,7 @@ def test_create_collaborator_rejects_too_long_full_name(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="full_name must be less than 64 characters"):
+    with pytest.raises(BusinessValidationError, match="full_name must be less than 64 characters"):
         create_collaborator(session, 4, "A" * 65, "collab@example.com", "SALES", "S3cretPwd!")
 
 
@@ -254,7 +254,7 @@ def test_create_collaborator_rejects_missing_email(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is required"):
+    with pytest.raises(BusinessValidationError, match="email is required"):
         create_collaborator(session, 4, "Collab", "", "SALES", "S3cretPwd!")
 
 
@@ -263,7 +263,7 @@ def test_create_collaborator_rejects_invalid_email(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is invalid"):
+    with pytest.raises(BusinessValidationError, match="email is invalid"):
         create_collaborator(session, 4, "Collab", "not-an-email", "SALES", "S3cretPwd!")
 
 
@@ -272,7 +272,7 @@ def test_create_collaborator_rejects_too_long_email(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email must be less than 128 characters"):
+    with pytest.raises(BusinessValidationError, match="email must be less than 128 characters"):
         create_collaborator(session, 4, "Collab", "a" * 117 + "@example.com", "SALES", "S3cretPwd!")
 
 
@@ -281,7 +281,7 @@ def test_create_collaborator_rejects_missing_role_name(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="role_name is required"):
+    with pytest.raises(BusinessValidationError, match="role_name is required"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "", "S3cretPwd!")
 
 
@@ -290,7 +290,7 @@ def test_create_collaborator_rejects_unknown_role(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="unknown role"):
+    with pytest.raises(BusinessValidationError, match="unknown role"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "UNKNOWN", "S3cretPwd!")
 
 
@@ -304,7 +304,7 @@ def test_create_collaborator_rejects_duplicate_email(monkeypatch, fake_user, sal
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email already exists"):
+    with pytest.raises(BusinessValidationError, match="email already exists"):
         create_collaborator(session, 4, "Collab", collaborator_one.email, "SALES", "S3cretPwd!")
 
 
@@ -318,7 +318,7 @@ def test_create_collaborator_rejects_duplicate_employee_number(monkeypatch, fake
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number already exists"):
+    with pytest.raises(BusinessValidationError, match="employee_number already exists"):
         create_collaborator(session, collaborator_three.employee_number, "Collab", "new@example.com", "SALES", "S3cretPwd!")
 
 
@@ -327,7 +327,7 @@ def test_create_collaborator_rejects_short_password(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="password too short"):
+    with pytest.raises(BusinessValidationError, match="password too short"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "short")
 
 
@@ -435,7 +435,7 @@ def test_update_collaborator_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         update_collaborator(session, 1, full_name="Updated")
 
 
@@ -446,7 +446,7 @@ def test_update_collaborator_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         update_collaborator(session, 1, full_name="Updated")
 
 
@@ -457,7 +457,7 @@ def test_update_collaborator_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         update_collaborator(session, 1, full_name="Updated")
 
 
@@ -466,7 +466,7 @@ def test_update_collaborator_rejects_missing_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number is required"):
+    with pytest.raises(BusinessValidationError, match="employee_number is required"):
         update_collaborator(session, None, full_name="Updated")
 
 
@@ -475,7 +475,7 @@ def test_update_collaborator_rejects_invalid_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number must be an integer"):
+    with pytest.raises(BusinessValidationError, match="employee_number must be an integer"):
         update_collaborator(session, "bad", full_name="Updated")
 
 
@@ -484,7 +484,7 @@ def test_update_collaborator_rejects_no_fields(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="no fields to update"):
+    with pytest.raises(BusinessValidationError, match="no fields to update"):
         update_collaborator(session, 1)
 
 
@@ -493,7 +493,7 @@ def test_update_collaborator_rejects_collaborator_not_found(monkeypatch, fake_us
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="collaborator not found"):
+    with pytest.raises(BusinessValidationError, match="collaborator not found"):
         update_collaborator(session, 999, full_name="Updated")
 
 
@@ -502,7 +502,7 @@ def test_update_collaborator_rejects_missing_full_name(monkeypatch, fake_user, c
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="full_name is required"):
+    with pytest.raises(BusinessValidationError, match="full_name is required"):
         update_collaborator(session, 1, full_name="")
 
 
@@ -511,7 +511,7 @@ def test_update_collaborator_rejects_too_long_full_name(monkeypatch, fake_user, 
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="full_name must be less than 64 characters"):
+    with pytest.raises(BusinessValidationError, match="full_name must be less than 64 characters"):
         update_collaborator(session, 1, full_name="A" * 65)
 
 
@@ -520,7 +520,7 @@ def test_update_collaborator_rejects_missing_email(monkeypatch, fake_user, colla
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is required"):
+    with pytest.raises(BusinessValidationError, match="email is required"):
         update_collaborator(session, 1, email="")
 
 
@@ -529,7 +529,7 @@ def test_update_collaborator_rejects_invalid_email(monkeypatch, fake_user, colla
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is invalid"):
+    with pytest.raises(BusinessValidationError, match="email is invalid"):
         update_collaborator(session, 1, email="not-an-email")
 
 
@@ -538,7 +538,7 @@ def test_update_collaborator_rejects_too_long_email(monkeypatch, fake_user, coll
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email must be less than 128 characters"):
+    with pytest.raises(BusinessValidationError, match="email must be less than 128 characters"):
         update_collaborator(session, 1, email="a" * 117 + "@example.com")
 
 
@@ -547,7 +547,7 @@ def test_update_collaborator_rejects_existing_email(monkeypatch, fake_user, coll
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email already exists"):
+    with pytest.raises(BusinessValidationError, match="email already exists"):
         update_collaborator(session, 1, email=collaborator_two.email)
 
 
@@ -556,7 +556,7 @@ def test_update_collaborator_rejects_missing_role_name(monkeypatch, fake_user, c
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="role_name is required"):
+    with pytest.raises(BusinessValidationError, match="role_name is required"):
         update_collaborator(session, 1, role_name="")
 
 
@@ -570,7 +570,7 @@ def test_update_collaborator_rejects_unknown_role(monkeypatch, fake_user, collab
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="unknown role"):
+    with pytest.raises(BusinessValidationError, match="unknown role"):
         update_collaborator(session, 1, role_name="UNKNOWN")
 
 
@@ -579,7 +579,7 @@ def test_update_collaborator_rejects_missing_password(monkeypatch, fake_user, co
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="password is required"):
+    with pytest.raises(BusinessValidationError, match="password is required"):
         update_collaborator(session, 1, plain_password="")
 
 
@@ -588,7 +588,7 @@ def test_update_collaborator_rejects_short_password(monkeypatch, fake_user, coll
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="password too short"):
+    with pytest.raises(BusinessValidationError, match="password too short"):
         update_collaborator(session, 1, plain_password="short")
 
 
@@ -637,7 +637,7 @@ def test_delete_collaborator_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         delete_collaborator(session, 1)
 
 
@@ -648,7 +648,7 @@ def test_delete_collaborator_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         delete_collaborator(session, 1)
 
 
@@ -659,7 +659,7 @@ def test_delete_collaborator_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.collaborators.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.collaborators.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         delete_collaborator(session, 1)
 
 
@@ -668,7 +668,7 @@ def test_delete_collaborator_rejects_missing_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number is required"):
+    with pytest.raises(BusinessValidationError, match="employee_number is required"):
         delete_collaborator(session, None)
 
 
@@ -677,7 +677,7 @@ def test_delete_collaborator_rejects_invalid_employee_number(monkeypatch, fake_u
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="employee_number must be an integer"):
+    with pytest.raises(BusinessValidationError, match="employee_number must be an integer"):
         delete_collaborator(session, "bad")
 
 
@@ -686,5 +686,5 @@ def test_delete_collaborator_rejects_collaborator_not_found(monkeypatch, fake_us
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="collaborator not found"):
+    with pytest.raises(BusinessValidationError, match="collaborator not found"):
         delete_collaborator(session, 999)

@@ -1,7 +1,7 @@
 import pytest
 
 from tests.conftest import FakeClient, FakeSession
-
+from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
 from epicevents.models.client import Client
 from epicevents.services.clients import (
     get_all_clients,
@@ -11,15 +11,15 @@ from epicevents.services.clients import (
 
 
 def raise_authentication_failed():
-    raise Exception("Authentication failed")
+    raise NotLoggedInError("Authentication failed")
 
 
 def raise_no_user():
-    raise Exception("User no longer exists")
+    raise UserNotFoundError("User no longer exists")
 
 
 def raise_no_permission(role, action):
-    raise PermissionError("No permission")
+    raise BusinessAuthorizationError("No permission")
 
 
 def allow_authenticated_user(monkeypatch, user):
@@ -91,7 +91,7 @@ def test_get_all_clients_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         get_all_clients(session)
 
 
@@ -102,7 +102,7 @@ def test_get_all_clients_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         get_all_clients(session)
 
 
@@ -113,7 +113,7 @@ def test_get_all_clients_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         get_all_clients(session)
 
 
@@ -162,7 +162,7 @@ def test_create_client_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         create_client(session, "infos", "Client", "client@example.com", "+33612345678", "Company")
 
 
@@ -173,7 +173,7 @@ def test_create_client_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         create_client(session, "infos", "Client", "client@example.com", "+33612345678", "Company")
 
 
@@ -184,7 +184,7 @@ def test_create_client_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         create_client(session, "infos", "Client", "client@example.com", "+33612345678", "Company")
 
 
@@ -193,7 +193,7 @@ def test_create_client_rejects_missing_name(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="name is required"):
+    with pytest.raises(BusinessValidationError, match="name is required"):
         create_client(session, "infos", "", "client@example.com", "+33612345678", "Company")
 
 
@@ -202,7 +202,7 @@ def test_create_client_rejects_missing_email(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is required"):
+    with pytest.raises(BusinessValidationError, match="email is required"):
         create_client(session, "infos", "Client", "", "+33612345678", "Company")
 
 
@@ -211,7 +211,7 @@ def test_create_client_rejects_invalid_email(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email is invalid"):
+    with pytest.raises(BusinessValidationError, match="email is invalid"):
         create_client(session, "infos", "Client", "not-an-email", "+33612345678", "Company")
 
 
@@ -220,7 +220,7 @@ def test_create_client_rejects_duplicate_email(monkeypatch, fake_user, owned_cli
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="email already exists"):
+    with pytest.raises(BusinessValidationError, match="email already exists"):
         create_client(session, "infos", "Client", "CLIENT1@example.com", "+33612345678", "Company")
 
 
@@ -229,7 +229,7 @@ def test_create_client_rejects_missing_phone_number(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="phone_number is required"):
+    with pytest.raises(BusinessValidationError, match="phone_number is required"):
         create_client(session, "infos", "Client", "client@example.com", "", "Company")
 
 
@@ -238,7 +238,7 @@ def test_create_client_rejects_invalid_phone_number(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="phone_number is invalid"):
+    with pytest.raises(BusinessValidationError, match="phone_number is invalid"):
         create_client(session, "infos", "Client", "client@example.com", "abc", "Company")
 
 
@@ -247,7 +247,7 @@ def test_create_client_rejects_missing_company_name(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="company_name is required"):
+    with pytest.raises(BusinessValidationError, match="company_name is required"):
         create_client(session, "infos", "Client", "client@example.com", "+33612345678", "")
 
 
@@ -287,7 +287,7 @@ def test_update_client_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         update_client(session, 1, name="Updated Client")
 
 
@@ -298,7 +298,7 @@ def test_update_client_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         update_client(session, 1, name="Updated Client")
 
 
@@ -309,7 +309,7 @@ def test_update_client_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.clients.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.clients.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         update_client(session, 1, name="Updated Client")
 
 
@@ -318,7 +318,7 @@ def test_update_client_rejects_missing_client_id(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="client_id is required"):
+    with pytest.raises(BusinessValidationError, match="client_id is required"):
         update_client(session, 0, name="Updated Client")
 
 
@@ -327,7 +327,7 @@ def test_update_client_rejects_no_fields(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="no fields to update"):
+    with pytest.raises(BusinessValidationError, match="no fields to update"):
         update_client(session, 1)
 
 
@@ -336,7 +336,7 @@ def test_update_client_rejects_client_not_found(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="client not found"):
+    with pytest.raises(BusinessValidationError, match="client not found"):
         update_client(session, 999, name="Updated Client")
 
 
@@ -345,7 +345,7 @@ def test_update_client_rejects_not_owned_client(monkeypatch, sales_user, unowned
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(PermissionError, match="You are not the sales contact of this client"):
+    with pytest.raises(BusinessAuthorizationError, match="You are not the sales contact of this client"):
         update_client(session, unowned_client.id, name="Updated Client")
 
 
@@ -354,7 +354,7 @@ def test_update_client_rejects_missing_name(monkeypatch, sales_user, owned_clien
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="name is required"):
+    with pytest.raises(BusinessValidationError, match="name is required"):
         update_client(session, owned_client.id, name="")
 
 
@@ -363,7 +363,7 @@ def test_update_client_rejects_missing_email(monkeypatch, sales_user, owned_clie
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="email is required"):
+    with pytest.raises(BusinessValidationError, match="email is required"):
         update_client(session, owned_client.id, email="")
 
 
@@ -372,7 +372,7 @@ def test_update_client_rejects_invalid_email(monkeypatch, sales_user, owned_clie
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="email is invalid"):
+    with pytest.raises(BusinessValidationError, match="email is invalid"):
         update_client(session, owned_client.id, email="not-an-email")
 
 
@@ -381,7 +381,7 @@ def test_update_client_rejects_existing_email(monkeypatch, sales_user, owned_cli
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="email already exists"):
+    with pytest.raises(BusinessValidationError, match="email already exists"):
         update_client(session, owned_client.id, email=second_owned_client.email)
 
 
@@ -390,7 +390,7 @@ def test_update_client_rejects_missing_phone_number(monkeypatch, sales_user, own
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="phone_number is required"):
+    with pytest.raises(BusinessValidationError, match="phone_number is required"):
         update_client(session, owned_client.id, phone_number="")
 
 
@@ -399,7 +399,7 @@ def test_update_client_rejects_invalid_phone_number(monkeypatch, sales_user, own
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="phone_number is invalid"):
+    with pytest.raises(BusinessValidationError, match="phone_number is invalid"):
         update_client(session, owned_client.id, phone_number="abc")
 
 
@@ -408,5 +408,5 @@ def test_update_client_rejects_missing_company_name(monkeypatch, sales_user, own
 
     allow_authenticated_user(monkeypatch, sales_user)
 
-    with pytest.raises(ValueError, match="company_name is required"):
+    with pytest.raises(BusinessValidationError, match="company_name is required"):
         update_client(session, owned_client.id, company_name="")

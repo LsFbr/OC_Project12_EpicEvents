@@ -14,18 +14,19 @@ from epicevents.services.events import (
     update_event,
     assign_support,
 )
+from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
 
 
 def raise_authentication_failed():
-    raise Exception("Authentication failed")
+    raise NotLoggedInError("Authentication failed")
 
 
 def raise_no_user():
-    raise Exception("User no longer exists")
+    raise UserNotFoundError("User no longer exists")
 
 
 def raise_no_permission(role_name, action):
-    raise PermissionError("No permission")
+    raise BusinessAuthorizationError("No permission")
 
 
 def allow_authenticated_user(monkeypatch, user):
@@ -124,12 +125,12 @@ def test_require_datetime_ok(base_dates):
 
 
 def test_require_datetime_rejects_none():
-    with pytest.raises(ValueError, match="date_start is required"):
+    with pytest.raises(BusinessValidationError, match="date_start is required"):
         _require_datetime(None, "date_start")
 
 
 def test_require_datetime_rejects_invalid_type():
-    with pytest.raises(ValueError, match="date_start must be a datetime"):
+    with pytest.raises(BusinessValidationError, match="date_start must be a datetime"):
         _require_datetime("2026-01-01", "date_start")
 
 
@@ -148,21 +149,21 @@ def test_require_support_collaborator_ok(support_user):
 def test_require_support_collaborator_rejects_missing_id():
     session = FakeSession(query_map={Collaborator: []})
 
-    with pytest.raises(ValueError, match="support_contact_id is required"):
+    with pytest.raises(BusinessValidationError, match="support_contact_id is required"):
         _require_support_collaborator(session, None)
 
 
 def test_require_support_collaborator_rejects_not_found():
     session = FakeSession(query_map={Collaborator: []})
 
-    with pytest.raises(ValueError, match="support collaborator not found"):
+    with pytest.raises(BusinessValidationError, match="support collaborator not found"):
         _require_support_collaborator(session, 999)
 
 
 def test_require_support_collaborator_rejects_non_support(sales_user):
     session = FakeSession(query_map={Collaborator: [sales_user]})
 
-    with pytest.raises(ValueError, match="collaborator is not support"):
+    with pytest.raises(BusinessValidationError, match="collaborator is not support"):
         _require_support_collaborator(session, sales_user.id)
 
 
@@ -187,7 +188,7 @@ def test_get_all_events_rejects_combined_filters(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="support_contact_id and assigned_to_me cannot be used together"):
+    with pytest.raises(BusinessValidationError, match="support_contact_id and assigned_to_me cannot be used together"):
         get_all_events(session, support_contact_id=20, assigned_to_me=True)
 
 
@@ -210,7 +211,7 @@ def test_get_all_events_filter_by_support_contact_id_no_permission(monkeypatch, 
     allow_authenticated_user(monkeypatch, fake_user)
     monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: False)
 
-    with pytest.raises(PermissionError, match="only management can filter by support_contact_id"):
+    with pytest.raises(BusinessAuthorizationError, match="only management can filter by support_contact_id"):
         get_all_events(session, support_contact_id=20)
 
 
@@ -233,7 +234,7 @@ def test_get_all_events_filter_by_mine_no_permission(monkeypatch, support_user):
     allow_authenticated_user(monkeypatch, support_user)
     monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: False)
 
-    with pytest.raises(PermissionError, match="only support can use the mine filter"):
+    with pytest.raises(BusinessAuthorizationError, match="only support can use the mine filter"):
         get_all_events(session, assigned_to_me=True)
 
 
@@ -275,7 +276,7 @@ def test_create_event_no_permission(monkeypatch, fake_user, base_dates):
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         create_event(session, "A", "B", "Paris", 10, start, end, 1)
 
 
@@ -285,7 +286,7 @@ def test_create_event_rejects_missing_title(monkeypatch, fake_user, base_dates):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="title is required"):
+    with pytest.raises(BusinessValidationError, match="title is required"):
         create_event(session, "", "B", "Paris", 10, start, end, 1)
 
 
@@ -295,7 +296,7 @@ def test_create_event_rejects_missing_location(monkeypatch, fake_user, base_date
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="location is required"):
+    with pytest.raises(BusinessValidationError, match="location is required"):
         create_event(session, "A", "B", "", 10, start, end, 1)
 
 
@@ -305,7 +306,7 @@ def test_create_event_rejects_invalid_attendees(monkeypatch, fake_user, base_dat
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="attendees must be an integer"):
+    with pytest.raises(BusinessValidationError, match="attendees must be an integer"):
         create_event(session, "A", "B", "Paris", "10", start, end, 1)
 
 
@@ -315,7 +316,7 @@ def test_create_event_rejects_negative_attendees(monkeypatch, fake_user, base_da
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="attendees must be greater than or equal to 0"):
+    with pytest.raises(BusinessValidationError, match="attendees must be greater than or equal to 0"):
         create_event(session, "A", "B", "Paris", -1, start, end, 1)
 
 
@@ -328,7 +329,7 @@ def test_create_event_rejects_date_order(monkeypatch, fake_user, base_dates):
 
     monkeypatch.setattr("epicevents.services.events._require_datetime", lambda value, field_name: value)
 
-    with pytest.raises(ValueError, match="date_end must be greater than or equal to date_start"):
+    with pytest.raises(BusinessValidationError, match="date_end must be greater than or equal to date_start"):
         create_event(session, "A", "B", "Paris", 10, start, end, 1)
 
 
@@ -340,7 +341,7 @@ def test_create_event_rejects_contract_not_found(monkeypatch, fake_user, base_da
 
     monkeypatch.setattr("epicevents.services.events._require_datetime", lambda value, field_name: value)
 
-    with pytest.raises(ValueError, match="contract not found"):
+    with pytest.raises(BusinessValidationError, match="contract not found"):
         create_event(session, "A", "B", "Paris", 10, start, end, 999)
 
 
@@ -352,7 +353,7 @@ def test_create_event_rejects_unsigned_contract(monkeypatch, fake_user, unsigned
 
     monkeypatch.setattr("epicevents.services.events._require_datetime", lambda value, field_name: value)
 
-    with pytest.raises(ValueError, match="contract must be signed"):
+    with pytest.raises(BusinessValidationError, match="contract must be signed"):
         create_event(session, "A", "B", "Paris", 10, start, end, 2)
 
 
@@ -364,7 +365,7 @@ def test_create_event_rejects_unowned_contract(monkeypatch, sales_user, signed_u
 
     monkeypatch.setattr("epicevents.services.events._require_datetime", lambda value, field_name: value)
 
-    with pytest.raises(PermissionError, match="you are not the sales contact of this contract"):
+    with pytest.raises(BusinessAuthorizationError, match="you are not the sales contact of this contract"):
         create_event(session, "A", "B", "Paris", 10, start, end, 3)
 
 
@@ -404,7 +405,7 @@ def test_update_event_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         update_event(session, 1, title="Updated")
 
 
@@ -413,7 +414,7 @@ def test_update_event_rejects_no_fields(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="no fields to update"):
+    with pytest.raises(BusinessValidationError, match="no fields to update"):
         update_event(session, 1)
 
 
@@ -422,7 +423,7 @@ def test_update_event_rejects_event_not_found(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="event not found"):
+    with pytest.raises(BusinessValidationError, match="event not found"):
         update_event(session, 999, title="Updated")
 
 
@@ -431,7 +432,7 @@ def test_update_event_rejects_support_not_assigned(monkeypatch, support_user, ev
 
     allow_authenticated_user(monkeypatch, support_user)
 
-    with pytest.raises(PermissionError, match="you are not the support contact of this event"):
+    with pytest.raises(BusinessAuthorizationError, match="you are not the support contact of this event"):
         update_event(session, 2, title="Updated")
 
 
@@ -440,7 +441,7 @@ def test_update_event_rejects_forbidden_field(monkeypatch, support_user, event_a
 
     allow_authenticated_user(monkeypatch, support_user)
 
-    with pytest.raises(ValueError, match="forbidden field: support_contact_id"):
+    with pytest.raises(BusinessValidationError, match="forbidden field: support_contact_id"):
         update_event(session, 1, support_contact_id=20)
 
 
@@ -449,7 +450,7 @@ def test_update_event_rejects_invalid_attendees(monkeypatch, support_user, event
 
     allow_authenticated_user(monkeypatch, support_user)
 
-    with pytest.raises(ValueError, match="attendees must be an integer"):
+    with pytest.raises(BusinessValidationError, match="attendees must be an integer"):
         update_event(session, 1, attendees="99")
 
 
@@ -462,7 +463,7 @@ def test_update_event_rejects_date_order(monkeypatch, support_user, event_assign
 
     monkeypatch.setattr("epicevents.services.events._require_datetime", lambda value, field_name: value)
 
-    with pytest.raises(ValueError, match="date_end must be greater than or equal to date_start"):
+    with pytest.raises(BusinessValidationError, match="date_end must be greater than or equal to date_start"):
         update_event(session, 1, date_start=start, date_end=end)
 
 
@@ -490,7 +491,7 @@ def test_assign_support_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.events.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.events.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         assign_support(session, 1, 20)
 
 
@@ -501,7 +502,7 @@ def test_assign_support_rejects_event_not_found(monkeypatch, fake_user):
     
     monkeypatch.setattr("epicevents.services.events._require_support_collaborator", lambda session, support_contact_id: fake_user)
 
-    with pytest.raises(ValueError, match="event not found"):
+    with pytest.raises(BusinessValidationError, match="event not found"):
         assign_support(session, 999, 20)
 
 
@@ -509,11 +510,11 @@ def test_assign_support_rejects_non_support(monkeypatch, management_user, event_
     session = FakeSession(query_map={Event: [event_without_support]})
 
     def raise_not_support(session, support_contact_id):
-        raise ValueError("collaborator is not support")
+        raise BusinessValidationError("collaborator is not support")
 
     allow_authenticated_user(monkeypatch, management_user)
 
     monkeypatch.setattr("epicevents.services.events._require_support_collaborator", raise_not_support)
 
-    with pytest.raises(ValueError, match="collaborator is not support"):
+    with pytest.raises(BusinessValidationError, match="collaborator is not support"):
         assign_support(session, 2, sales_user.id)

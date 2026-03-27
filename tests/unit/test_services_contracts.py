@@ -15,18 +15,19 @@ from epicevents.security.permissions import (
     CONTRACT_UPDATE_ANY,
     CONTRACT_UPDATE_OWNED,
 )
+from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
 
 
 def raise_authentication_failed():
-    raise Exception("Authentication failed")
+    raise NotLoggedInError("Authentication failed")
 
 
 def raise_no_user():
-    raise Exception("User no longer exists")
+    raise UserNotFoundError("User no longer exists")
 
 
 def raise_no_permission(role_name, action):
-    raise PermissionError("No permission")
+    raise BusinessAuthorizationError("No permission")
 
 
 def allow_authenticated_user(monkeypatch, user):
@@ -92,12 +93,12 @@ def test_to_decimal_ok():
 
 
 def test_to_decimal_rejects_missing_value():
-    with pytest.raises(ValueError, match="total_amount is required"):
+    with pytest.raises(BusinessValidationError, match="total_amount is required"):
         _to_decimal("", "total_amount")
 
 
 def test_to_decimal_rejects_invalid_value():
-    with pytest.raises(ValueError, match="total_amount must be a valid decimal amount"):
+    with pytest.raises(BusinessValidationError, match="total_amount must be a valid decimal amount"):
         _to_decimal("abc", "total_amount")
 
 
@@ -124,7 +125,7 @@ def test_get_all_contracts_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         get_all_contracts(session)
 
 
@@ -135,7 +136,7 @@ def test_get_all_contracts_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         get_all_contracts(session)
 
 
@@ -146,7 +147,7 @@ def test_get_all_contracts_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         get_all_contracts(session)
 
 
@@ -155,7 +156,7 @@ def test_get_all_contracts_rejects_combined_signed_filters(monkeypatch, fake_use
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="signed and not_signed filters cannot be used together"):
+    with pytest.raises(BusinessValidationError, match="signed and not_signed filters cannot be used together"):
         get_all_contracts(session, signed=True, not_signed=True)
 
 
@@ -164,7 +165,7 @@ def test_get_all_contracts_rejects_combined_paid_filters(monkeypatch, fake_user)
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="paid and unpaid filters cannot be used together"):
+    with pytest.raises(BusinessValidationError, match="paid and unpaid filters cannot be used together"):
         get_all_contracts(session, paid=True, unpaid=True)
 
 
@@ -186,7 +187,7 @@ def test_get_all_contracts_signed_filter_no_permission(monkeypatch, fake_user):
     allow_authenticated_user(monkeypatch, fake_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: False)
 
-    with pytest.raises(PermissionError, match="only sales can filter by signed contracts"):
+    with pytest.raises(BusinessAuthorizationError, match="only sales can filter by signed contracts"):
         get_all_contracts(session, signed=True)
 
 
@@ -208,7 +209,7 @@ def test_get_all_contracts_paid_filter_no_permission(monkeypatch, fake_user):
     allow_authenticated_user(monkeypatch, fake_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: False)
 
-    with pytest.raises(PermissionError, match="only sales can filter by paid contracts"):
+    with pytest.raises(BusinessAuthorizationError, match="only sales can filter by paid contracts"):
         get_all_contracts(session, paid=True)
 
 
@@ -315,7 +316,7 @@ def test_create_contract_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         create_contract(session, 1, "1200.50", "500.25")
 
 
@@ -326,7 +327,7 @@ def test_create_contract_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", raise_no_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", lambda role, action: None)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         create_contract(session, 1, "1200.50", "500.25")
 
 
@@ -337,7 +338,7 @@ def test_create_contract_no_permission(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.require_permission", raise_no_permission)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         create_contract(session, 1, "1200.50", "500.25")
 
 
@@ -346,7 +347,7 @@ def test_create_contract_rejects_missing_client_id(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="client_id is required"):
+    with pytest.raises(BusinessValidationError, match="client_id is required"):
         create_contract(session, 0, "1200.50", "500.25")
 
 
@@ -355,7 +356,7 @@ def test_create_contract_rejects_client_not_found(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="client not found"):
+    with pytest.raises(BusinessValidationError, match="client not found"):
         create_contract(session, 999, "1200.50", "500.25")
 
 
@@ -364,7 +365,7 @@ def test_create_contract_rejects_invalid_total_amount(monkeypatch, fake_user, ow
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="total_amount must be a valid decimal amount"):
+    with pytest.raises(BusinessValidationError, match="total_amount must be a valid decimal amount"):
         create_contract(session, owned_client.id, "abc", "500.25")
 
 
@@ -373,7 +374,7 @@ def test_create_contract_rejects_invalid_rest_amount(monkeypatch, fake_user, own
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(ValueError, match="rest_amount must be a valid decimal amount"):
+    with pytest.raises(BusinessValidationError, match="rest_amount must be a valid decimal amount"):
         create_contract(session, owned_client.id, "1200.50", "abc")
 
 
@@ -386,7 +387,7 @@ def test_create_contract_rejects_negative_total_amount(monkeypatch, fake_user, o
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="total_amount must be greater than or equal to 0"):
+    with pytest.raises(BusinessValidationError, match="total_amount must be greater than or equal to 0"):
         create_contract(session, owned_client.id, "-1", "0")
 
 
@@ -399,7 +400,7 @@ def test_create_contract_rejects_negative_rest_amount(monkeypatch, fake_user, ow
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="rest_amount must be greater than or equal to 0"):
+    with pytest.raises(BusinessValidationError, match="rest_amount must be greater than or equal to 0"):
         create_contract(session, owned_client.id, "100", "-1")
 
 
@@ -412,7 +413,7 @@ def test_create_contract_rejects_rest_amount_exceeds_total_amount(monkeypatch, f
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="rest_amount cannot exceed total_amount"):
+    with pytest.raises(BusinessValidationError, match="rest_amount cannot exceed total_amount"):
         create_contract(session, owned_client.id, "100", "101")
 
 
@@ -570,7 +571,7 @@ def test_update_contract_authentication_failed(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", raise_authentication_failed)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
 
-    with pytest.raises(Exception, match="Authentication failed"):
+    with pytest.raises(NotLoggedInError, match="Authentication failed"):
         update_contract(session, 1, total_amount="1500.00")
 
 
@@ -580,7 +581,7 @@ def test_update_contract_no_user(monkeypatch):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", raise_no_user)
 
-    with pytest.raises(Exception, match="User no longer exists"):
+    with pytest.raises(UserNotFoundError, match="User no longer exists"):
         update_contract(session, 1, total_amount="1500.00")
 
 
@@ -591,7 +592,7 @@ def test_update_contract_no_permission(monkeypatch, fake_user, owned_contract):
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: False)
 
-    with pytest.raises(PermissionError, match="No permission"):
+    with pytest.raises(BusinessAuthorizationError, match="No permission"):
         update_contract(session, 1, total_amount="1500.00")
 
 
@@ -601,7 +602,7 @@ def test_update_contract_rejects_missing_contract_id(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
 
-    with pytest.raises(ValueError, match="contract_id is required"):
+    with pytest.raises(BusinessValidationError, match="contract_id is required"):
         update_contract(session, 0, total_amount="1500.00")
 
 
@@ -611,7 +612,7 @@ def test_update_contract_rejects_no_fields(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
 
-    with pytest.raises(ValueError, match="no fields to update"):
+    with pytest.raises(BusinessValidationError, match="no fields to update"):
         update_contract(session, 1)
 
 
@@ -621,7 +622,7 @@ def test_update_contract_rejects_contract_not_found(monkeypatch, fake_user):
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: fake_user)
 
-    with pytest.raises(ValueError, match="contract not found"):
+    with pytest.raises(BusinessValidationError, match="contract not found"):
         update_contract(session, 999, total_amount="1500.00")
 
 
@@ -635,7 +636,7 @@ def test_update_contract_rejects_not_owned_contract(monkeypatch, sales_user, uno
         lambda role, action: action == CONTRACT_UPDATE_OWNED,
     )
 
-    with pytest.raises(PermissionError, match="you are not the sales contact of this contract"):
+    with pytest.raises(BusinessAuthorizationError, match="you are not the sales contact of this contract"):
         update_contract(session, 3, total_amount="1500.00")
 
 
@@ -651,7 +652,7 @@ def test_update_contract_rejects_client_not_found(monkeypatch, management_user, 
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
 
-    with pytest.raises(ValueError, match="client not found"):
+    with pytest.raises(BusinessValidationError, match="client not found"):
         update_contract(session, 1, client_id=999)
 
 
@@ -670,7 +671,7 @@ def test_update_contract_rejects_sales_changing_to_unowned_client(monkeypatch, s
         lambda role, action: action == CONTRACT_UPDATE_OWNED,
     )
 
-    with pytest.raises(PermissionError, match="you are not the sales contact of this client"):
+    with pytest.raises(BusinessAuthorizationError, match="you are not the sales contact of this client"):
         update_contract(session, 1, client_id=unowned_client.id)
 
 
@@ -702,7 +703,7 @@ def test_update_contract_rejects_invalid_total_amount(monkeypatch, management_us
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
 
-    with pytest.raises(ValueError, match="total_amount must be a valid decimal amount"):
+    with pytest.raises(BusinessValidationError, match="total_amount must be a valid decimal amount"):
         update_contract(session, 1, total_amount="abc")
 
 
@@ -713,7 +714,7 @@ def test_update_contract_rejects_invalid_rest_amount(monkeypatch, management_use
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
     monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
 
-    with pytest.raises(ValueError, match="rest_amount must be a valid decimal amount"):
+    with pytest.raises(BusinessValidationError, match="rest_amount must be a valid decimal amount"):
         update_contract(session, 1, rest_amount="abc")
 
 
@@ -728,7 +729,7 @@ def test_update_contract_rejects_negative_total_amount(monkeypatch, management_u
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="total_amount must be greater than or equal to 0"):
+    with pytest.raises(BusinessValidationError, match="total_amount must be greater than or equal to 0"):
         update_contract(session, 1, total_amount="-1")
 
 
@@ -743,7 +744,7 @@ def test_update_contract_rejects_negative_rest_amount(monkeypatch, management_us
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="rest_amount must be greater than or equal to 0"):
+    with pytest.raises(BusinessValidationError, match="rest_amount must be greater than or equal to 0"):
         update_contract(session, 1, rest_amount="-1")
 
 
@@ -758,5 +759,5 @@ def test_update_contract_rejects_rest_amount_exceeds_total_amount(monkeypatch, m
         lambda value, field_name: Decimal(str(value)),
     )
 
-    with pytest.raises(ValueError, match="rest_amount cannot exceed total_amount"):
+    with pytest.raises(BusinessValidationError, match="rest_amount cannot exceed total_amount"):
         update_contract(session, 1, total_amount="100", rest_amount="101")
