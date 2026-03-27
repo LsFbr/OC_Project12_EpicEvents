@@ -2,7 +2,7 @@ import pytest
 
 from epicevents.cli import cli as cli_module
 from tests.conftest import FakeUser, FakeClient, FakeContract, FakeEvent
-
+from epicevents.exceptions import InvalidCredentialsError, NotLoggedInError
 
 def capture_echo(monkeypatch):
     echoed = []
@@ -51,13 +51,38 @@ def test_login_command_failure(monkeypatch):
     monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
 
     def login_failure(*args, **kwargs):
-        raise Exception("Invalid email or password")
+        raise InvalidCredentialsError("Invalid email or password")
 
     monkeypatch.setattr("epicevents.cli.cli.login", login_failure)
 
     cli_module.login_command.callback()
 
     assert echoed == [("Login failed: Invalid email or password", True)]
+
+
+def test_login_command_unexpected_error(monkeypatch):
+    echoed = capture_echo(monkeypatch)
+    captured = {}
+
+    monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "user@example.com")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+
+    def login_unexpected_error(*args, **kwargs):
+        raise RuntimeError("unexpected error test")
+
+    def fake_capture(exc, **context):
+        captured["exc"] = exc
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.cli.cli.capture_unexpected_exception", fake_capture)
+    monkeypatch.setattr("epicevents.cli.cli.login", login_unexpected_error)
+
+    cli_module.login_command.callback()
+
+    assert isinstance(captured["exc"], RuntimeError)
+    assert str(captured["exc"]) == "unexpected error test"
+    assert captured["context"] == {"action": "Login"}
+    assert echoed == [("Login failed: unexpected error", True)]
 
 
 def test_logout_command_success(monkeypatch):
@@ -74,7 +99,7 @@ def test_logout_command_failure(monkeypatch):
     echoed = capture_echo(monkeypatch)
 
     def logout_failure(*args, **kwargs):
-        raise Exception("You were not logged in")
+        raise NotLoggedInError("You were not logged in")
 
     monkeypatch.setattr("epicevents.cli.cli.logout", logout_failure)
 
@@ -84,6 +109,26 @@ def test_logout_command_failure(monkeypatch):
     assert echoed == [("Logout failed: You were not logged in", True)]
 
 
+def test_logout_command_unexpected_error(monkeypatch):
+    echoed = capture_echo(monkeypatch)
+    captured = {}
+
+    def logout_unexpected_error(*args, **kwargs):
+        raise RuntimeError("unexpected error test")
+
+    def fake_capture(exc, **context):
+        captured["exc"] = exc
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.cli.cli.capture_unexpected_exception", fake_capture)
+    monkeypatch.setattr("epicevents.cli.cli.logout", logout_unexpected_error)
+
+    cli_module.logout_command.callback()
+
+    assert isinstance(captured["exc"], RuntimeError)
+    assert str(captured["exc"]) == "unexpected error test"
+    assert captured["context"] == {"action": "Logout"}
+    assert echoed == [("Logout failed: unexpected error", True)]
 # -------------------------
 # collaborators
 # -------------------------
@@ -166,7 +211,7 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session, managem
     monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
 
     def update_collaborator_failure(*args, **kwargs):
-        raise Exception("Failure test")
+        raise ValueError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_collaborator", update_collaborator_failure)
 
@@ -175,6 +220,39 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session, managem
     assert echoed == [
         ("Enter the details for the collaborator to update (marked with * are required):", False),
         ("Collaborators update failed: Failure test", True),
+    ]
+
+
+def test_collaborators_update_command_unexpected_error(monkeypatch, fake_session, management_user):
+    echoed = capture_echo(monkeypatch)
+    captured = {}
+
+    allow_cli_auth(monkeypatch, management_user)
+    monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
+    monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda *args, **kwargs: 1)
+    monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda *args, **kwargs: "Updated User")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "updated@example.com")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_role", lambda *args, **kwargs: "SUPPORT")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+
+    def update_collaborator_unexpected_error(*args, **kwargs):
+        raise RuntimeError("unexpected error test")
+
+    def fake_capture(exc, **context):
+        captured["exc"] = exc
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.cli.cli.update_collaborator", update_collaborator_unexpected_error)
+    monkeypatch.setattr("epicevents.cli.cli.capture_unexpected_exception", fake_capture)
+
+    cli_module.collaborators_update_command.callback()
+
+    assert isinstance(captured["exc"], RuntimeError)
+    assert str(captured["exc"]) == "unexpected error test"
+    assert captured["context"] == {"action": "Collaborators update"}
+    assert echoed == [
+        ("Enter the details for the collaborator to update (marked with * are required):", False),
+        ("Collaborators update failed: unexpected error", True),
     ]
 
 
@@ -278,7 +356,7 @@ def test_clients_update_command_failure(monkeypatch, fake_session, sales_user):
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: None)
 
     def update_client_failure(*args, **kwargs):
-        raise Exception("Failure test")
+        raise ValueError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_client", update_client_failure)
 
@@ -359,7 +437,7 @@ def test_contracts_update_command_failure(monkeypatch, fake_session, sales_user)
     monkeypatch.setattr("epicevents.cli.cli.prompt_bool", lambda *args, **kwargs: None)
 
     def update_contract_failure(*args, **kwargs):
-        raise Exception("Failure test")
+        raise ValueError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_contract", update_contract_failure)
 
@@ -444,7 +522,7 @@ def test_events_update_command_failure(monkeypatch, fake_session, support_user):
     monkeypatch.setattr("epicevents.cli.cli.prompt_datetime", lambda *args, **kwargs: None)
 
     def update_event_failure(*args, **kwargs):
-        raise Exception("Failure test")
+        raise ValueError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_event", update_event_failure)
 
