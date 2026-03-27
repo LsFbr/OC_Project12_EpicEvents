@@ -1,4 +1,11 @@
+from epicevents.monitoring.sentry import init_sentry
 from epicevents.cli.cli import cli
 
-if __name__ == "__main__":
+
+def main():
+    init_sentry()
     cli()
+
+
+if __name__ == "__main__":
+    main()
