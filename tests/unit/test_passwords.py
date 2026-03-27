@@ -1,4 +1,6 @@
 from epicevents.security.passwords import hash_password, verify_password
+from epicevents.exceptions import BusinessValidationError
+import pytest
 
 
 def test_hash_password_returns_a_string():
@@ -18,6 +20,5 @@ def test_verify_password_failure():
 
 
 def test_hash_password_rejects_empty_string():
-    import pytest
-    with pytest.raises(ValueError):
+    with pytest.raises(BusinessValidationError, match="Password must be a non-empty string."):
         hash_password("")
