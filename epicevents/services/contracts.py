@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from epicevents.monitoring.sentry import capture_business_event
 from epicevents.models.contract import Contract
 from epicevents.auth.utils import require_authentication
 from epicevents.security.permissions import (
@@ -115,6 +116,14 @@ def create_contract(
     session.add(contract)
     session.commit()
     session.refresh(contract)
+
+    if contract.is_signed is True:
+        capture_business_event(
+            "contract_signed",
+            contract_id=contract.id,
+            client_id=contract.client_id,
+        )
+        
     return contract
 
 
@@ -135,8 +144,9 @@ def update_contract(
     if contract is None:
         raise ValueError("contract not found")
 
-    can_update_any = has_permission(user.role.name, CONTRACT_UPDATE_ANY)
-    can_update_owned = has_permission(user.role.name, CONTRACT_UPDATE_OWNED)
+
+    can_update_any = has_permission(user.role.name, CONTRACT_UPDATE_ANY) # MANAGEMENT
+    can_update_owned = has_permission(user.role.name, CONTRACT_UPDATE_OWNED) # SALES
 
     if can_update_any:
         pass
@@ -145,6 +155,8 @@ def update_contract(
             raise PermissionError("you are not the sales contact of this contract")
     else:
         raise PermissionError("No permission")
+
+    previous_is_signed = contract.is_signed
 
     if "client_id" in fields:
         client_id = fields["client_id"]
@@ -184,4 +196,11 @@ def update_contract(
 
     session.commit()
     session.refresh(contract)
+
+    if previous_is_signed is False and contract.is_signed is True:
+        capture_business_event(
+            "contract_signed",
+            contract_id=contract.id,
+            client_id=contract.client_id,
+        )
     return contract
