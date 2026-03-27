@@ -1,6 +1,6 @@
 import click
 
-from epicevents.exceptions import AuthenticationError
+from epicevents.exceptions import AuthenticationError, BusinessValidationError, BusinessAuthorizationError
 from epicevents.monitoring.sentry import capture_unexpected_exception
 from epicevents.db.session import SessionLocal
 from epicevents.auth.utils import require_authentication
@@ -40,7 +40,7 @@ from epicevents.cli.prompt_helpers import (
 )
 
 def handle_cli_error(action_label: str, exc: Exception) -> None:
-    if isinstance(exc, (AuthenticationError, PermissionError, ValueError)):
+    if isinstance(exc, (AuthenticationError, BusinessAuthorizationError, BusinessValidationError)):
         click.echo(f"{action_label} failed: {exc}", err=True)
         return
 
@@ -366,22 +366,22 @@ def contracts_list_command(signed: bool, not_signed: bool, unpaid: bool, paid: b
         require_permission(user.role.name, READ_ALL)
 
         if signed and not_signed:
-            raise ValueError("signed and not_signed filters cannot be used together")
+            raise BusinessValidationError("signed and not_signed filters cannot be used together")
 
         if paid and unpaid:
-            raise ValueError("paid and unpaid filters cannot be used together")
+            raise BusinessValidationError("paid and unpaid filters cannot be used together")
 
         if signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
-            raise PermissionError("only sales can filter by signed contracts")
+            raise BusinessAuthorizationError("only sales can filter by signed contracts")
 
         if not_signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
-            raise PermissionError("only sales can filter by not signed contracts")
+            raise BusinessAuthorizationError("only sales can filter by not signed contracts")
 
         if unpaid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
-            raise PermissionError("only sales can filter by unpaid contracts")
+            raise BusinessAuthorizationError("only sales can filter by unpaid contracts")
 
         if paid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
-            raise PermissionError("only sales can filter by paid contracts")
+            raise BusinessAuthorizationError("only sales can filter by paid contracts")
 
         contracts = get_all_contracts(
             session,
@@ -472,7 +472,7 @@ def contracts_update_command():
         can_update_owned = has_permission(user.role.name, CONTRACT_UPDATE_OWNED)
 
         if not can_update_any and not can_update_owned:
-            raise PermissionError("You do not have permission to update this contract")
+            raise BusinessAuthorizationError("You do not have permission to update this contract")
         
         click.echo("Enter the details for the contract to update (marked with * are required):")
         fields = {}
@@ -530,10 +530,10 @@ def events_list_command(support_contact_id: int | None, mine: bool):
         require_permission(user.role.name, READ_ALL)
 
         if support_contact_id is not None and not has_permission(user.role.name, EVENT_FILTER_BY_SUPPORT_CONTACT_ID):
-            raise PermissionError("only management can filter by support contact id")
+            raise BusinessAuthorizationError("only management can filter by support contact id")
 
         if mine and not has_permission(user.role.name, EVENT_FILTER_BY_MINE):
-            raise PermissionError("only support can use the mine filter")
+            raise BusinessAuthorizationError("only support can use the mine filter")
 
         events = get_all_events(
             session,
