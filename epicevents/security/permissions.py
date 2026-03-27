@@ -1,5 +1,5 @@
 from typing import Set, Dict
-
+from epicevents.exceptions import BusinessAuthorizationError
 READ_ALL = "read all data"
 
 COLLAB_CREATE = "create a collaborator"
@@ -53,7 +53,7 @@ def has_permission(role_name: str, action: str) -> bool:
 
 def require_permission(role_name: str, action: str) -> None:
     if not has_permission(role_name, action):
-        raise PermissionError(
+        raise BusinessAuthorizationError(
             f"Permission denied: your role ({role_name}) does not have the permission to {action}. "
             f"You need the {' or '.join([role for role in PERMISSIONS if action in PERMISSIONS[role]])} role(s) to perform this action."
         )
