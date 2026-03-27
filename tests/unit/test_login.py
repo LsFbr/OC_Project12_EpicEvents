@@ -3,6 +3,7 @@ import pytest
 from epicevents.auth.login import login
 from tests.conftest import FakeSession, FakeUser
 from epicevents.models.collaborator import Collaborator
+from epicevents.exceptions import InvalidCredentialsError
 
 
 
@@ -12,7 +13,7 @@ def test_login_user_not_found(monkeypatch, fake_session):
 
     monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
 
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidCredentialsError):
         login("test@test.com", "password")
 
 
@@ -21,7 +22,7 @@ def test_login_wrong_password(monkeypatch, fake_session):
     monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
     monkeypatch.setattr("epicevents.auth.login.verify_password", lambda password, hash: False)
 
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidCredentialsError):
         login("test@test.com", "password")
 
 

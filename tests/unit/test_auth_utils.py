@@ -1,13 +1,14 @@
 import pytest
 
 from epicevents.auth.utils import require_authentication
+from epicevents.exceptions import NotLoggedInError
 
 
 def test_require_authentication_no_token(monkeypatch):
 
     monkeypatch.setattr("epicevents.auth.utils.load_token", lambda: None)
 
-    with pytest.raises(Exception):
+    with pytest.raises(NotLoggedInError):
         require_authentication()
 
 
