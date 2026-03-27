@@ -1,6 +1,6 @@
 import pytest
 
-from tests.conftest import FakeSession, FakeUser
+from tests.conftest import FakeSession, FakeUser, FakeRole
 
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
@@ -331,6 +331,38 @@ def test_create_collaborator_rejects_short_password(monkeypatch, fake_user):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "short")
 
 
+def test_create_collaborator_logs_business_event(monkeypatch, fake_user, sales_role):
+    session = FakeSession(
+        query_map={
+            Role: [sales_role],
+        }
+    )
+
+    allow_authenticated_user(monkeypatch, fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "hashed")
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.collaborators.capture_business_event", fake_capture)
+
+    collaborator = create_collaborator(
+        session,
+        employee_number=999,
+        full_name="New Collaborator",
+        email="new.collaborator@example.com",
+        role_name="SALES",
+        plain_password="Password123",
+    )
+
+    assert captured["message"] == "collaborator_created"
+    assert captured["context"]["collaborator_id"] == collaborator.id
+    assert captured["context"]["employee_number"] == 999
+    assert captured["context"]["role_name"] == "SALES"
+
 # -------------------------
 # update_collaborator
 # -------------------------
@@ -360,6 +392,40 @@ def test_update_collaborator_ok(monkeypatch, fake_user, collaborator_one, suppor
     assert collaborator.role_id == support_role.id
     assert collaborator.password_hash == "new_hashed"
     assert session.committed is True
+
+
+def test_update_collaborator_logs_business_event(monkeypatch, fake_user, collaborator_one, support_role):
+    session = FakeSession(
+        query_map={
+            Collaborator: [collaborator_one],
+            Role: [support_role],
+        }
+    )
+
+    allow_authenticated_user(monkeypatch, fake_user)
+    monkeypatch.setattr("epicevents.services.collaborators.hash_password", lambda password: "new_hashed")
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.collaborators.capture_business_event", fake_capture)
+
+    collaborator = update_collaborator(
+        session=session,
+        employee_number=1,
+        full_name=" Updated Collab One ",
+        email="UpdatedOne@example.com",
+        role_name="support",
+        plain_password="NewS3cretPwd!",
+    )
+
+    assert captured["message"] == "collaborator_updated"
+    assert captured["context"]["collaborator_id"] == collaborator.id
+    assert captured["context"]["employee_number"] == collaborator.employee_number
+    assert captured["context"]["updated_fields"] == ["email", "full_name", "plain_password", "role_name"]
 
 
 def test_update_collaborator_authentication_failed(monkeypatch, fake_user):
@@ -540,6 +606,28 @@ def test_delete_collaborator_ok(monkeypatch, fake_user, collaborator_one):
     assert collaborator == collaborator_one
     assert collaborator_one in session.deleted
     assert session.committed is True
+
+
+def test_delete_collaborator_logs_business_event(monkeypatch, fake_user, collaborator_one):
+    session = FakeSession(query_map={Collaborator: [collaborator_one]})
+
+    allow_authenticated_user(monkeypatch, fake_user)
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.collaborators.capture_business_event", fake_capture)
+
+    collaborator = delete_collaborator(session, 1)
+
+    assert collaborator == collaborator_one
+    assert captured["message"] == "collaborator_deleted"
+    assert captured["context"]["collaborator_id"] == collaborator_one.id
+    assert captured["context"]["employee_number"] == collaborator_one.employee_number
+    assert captured["context"]["role_name"] == collaborator_one.role.name
 
 
 def test_delete_collaborator_authentication_failed(monkeypatch, fake_user):
