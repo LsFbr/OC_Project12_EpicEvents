@@ -1,12 +1,14 @@
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
+from epicevents.exceptions import BusinessValidationError
+
 _ph = PasswordHasher()
 
 
 def hash_password(plain_password: str) -> str:
     if not isinstance(plain_password, str) or not plain_password.strip():
-        raise ValueError("Password must be a non-empty string.")
+        raise BusinessValidationError("Password must be a non-empty string.")
     return _ph.hash(plain_password)
 
 
