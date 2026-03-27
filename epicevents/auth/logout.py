@@ -1,4 +1,5 @@
 from epicevents.auth.token_storage import delete_token
+from epicevents.exceptions import NotLoggedInError
 
 def logout() -> None:
     """
@@ -9,4 +10,4 @@ def logout() -> None:
         None
     """
     if not delete_token():
-        raise Exception("You were not logged in")
+        raise NotLoggedInError("You were not logged in")

@@ -6,6 +6,7 @@ import os
 
 from epicevents.models.collaborator import Collaborator
 from epicevents.constants import JWT_ALGORITHM, JWT_TOKEN_EXPIRATION_HOURS
+from epicevents.exceptions import TokenExpiredError, InvalidAuthTokenError
 
 SECRET_KEY = os.getenv("EPICEVENTS_SECRET")
 
@@ -32,7 +33,7 @@ def decode_token(token: str) -> dict[str, Any]:
         return payload
 
     except ExpiredSignatureError:
-        raise Exception("Authentication token has expired. Please login again.")
+        raise TokenExpiredError("Authentication token has expired. Please login again.")
 
     except InvalidTokenError:
-        raise Exception("Invalid authentication token.")
+        raise InvalidAuthTokenError("Invalid authentication token.")
