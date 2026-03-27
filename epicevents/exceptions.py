@@ -1,3 +1,18 @@
+class ConfigurationError(RuntimeError):
+    """Raised when a configuration error occurs."""
+    pass
+
+
+class BusinessValidationError(ValueError):
+    """Raised for expected business validation errors."""
+    pass
+
+
+class BusinessAuthorizationError(PermissionError):
+    """Raised for expected business authorization errors."""
+    pass
+
+
 class AuthenticationError(ValueError):
     """Raised when authentication fails."""
     pass
