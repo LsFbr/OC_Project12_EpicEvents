@@ -2,7 +2,7 @@ import pytest
 
 from epicevents.cli import cli as cli_module
 from tests.conftest import FakeUser, FakeClient, FakeContract, FakeEvent
-from epicevents.exceptions import InvalidCredentialsError, NotLoggedInError
+from epicevents.exceptions import InvalidCredentialsError, NotLoggedInError, BusinessValidationError
 
 def capture_echo(monkeypatch):
     echoed = []
@@ -211,7 +211,7 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session, managem
     monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
 
     def update_collaborator_failure(*args, **kwargs):
-        raise ValueError("Failure test")
+        raise BusinessValidationError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_collaborator", update_collaborator_failure)
 
@@ -356,7 +356,7 @@ def test_clients_update_command_failure(monkeypatch, fake_session, sales_user):
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: None)
 
     def update_client_failure(*args, **kwargs):
-        raise ValueError("Failure test")
+        raise BusinessValidationError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_client", update_client_failure)
 
@@ -437,7 +437,7 @@ def test_contracts_update_command_failure(monkeypatch, fake_session, sales_user)
     monkeypatch.setattr("epicevents.cli.cli.prompt_bool", lambda *args, **kwargs: None)
 
     def update_contract_failure(*args, **kwargs):
-        raise ValueError("Failure test")
+        raise BusinessValidationError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_contract", update_contract_failure)
 
@@ -522,7 +522,7 @@ def test_events_update_command_failure(monkeypatch, fake_session, support_user):
     monkeypatch.setattr("epicevents.cli.cli.prompt_datetime", lambda *args, **kwargs: None)
 
     def update_event_failure(*args, **kwargs):
-        raise ValueError("Failure test")
+        raise BusinessValidationError("Failure test")
 
     monkeypatch.setattr("epicevents.cli.cli.update_event", update_event_failure)
 
