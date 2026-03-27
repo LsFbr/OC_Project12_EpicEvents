@@ -8,6 +8,7 @@ from epicevents.security.permissions import (
     EVENT_CREATE,
     EVENT_UPDATE_ASSIGNED,
 )
+from epicevents.exceptions import BusinessAuthorizationError
 
 
 # -------------------------
@@ -66,7 +67,7 @@ def test_require_permission_raises_when_has_permission_is_false(monkeypatch):
 
     monkeypatch.setattr("epicevents.security.permissions.has_permission", fake_has_permission)
 
-    with pytest.raises(PermissionError, match="Permission denied"):
+    with pytest.raises(BusinessAuthorizationError, match="Permission denied"):
         require_permission("SUPPORT", COLLAB_CREATE)
 
     assert called == {
@@ -81,7 +82,7 @@ def test_require_permission_error_message_contains_role_and_action(monkeypatch):
         lambda role_name, action: False,
     )
 
-    with pytest.raises(PermissionError) as exc_info:
+    with pytest.raises(BusinessAuthorizationError) as exc_info:
         require_permission("SUPPORT", COLLAB_CREATE)
 
     message = str(exc_info.value)
