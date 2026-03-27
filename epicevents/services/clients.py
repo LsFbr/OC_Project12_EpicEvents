@@ -7,6 +7,7 @@ from epicevents.models.client import Client
 from epicevents.auth.utils import require_authentication
 from epicevents.security.permissions import READ_ALL, CLIENT_CREATE, CLIENT_UPDATE_OWNED, require_permission
 from epicevents.auth.current_user import get_current_user
+from epicevents.exceptions import BusinessValidationError, BusinessAuthorizationError
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -41,20 +42,20 @@ def create_client(
     require_permission(user.role.name, CLIENT_CREATE)
 
     if not name:
-        raise ValueError("name is required")
+        raise BusinessValidationError("name is required")
     if not email:
-        raise ValueError("email is required")
+        raise BusinessValidationError("email is required")
     if not _EMAIL_RE.match(email):
-        raise ValueError("email is invalid")
+        raise BusinessValidationError("email is invalid")
     if not phone_number:
-        raise ValueError("phone_number is required")
+        raise BusinessValidationError("phone_number is required")
     if not _PHONE_RE.match(phone_number):
-        raise ValueError("phone_number is invalid")
+        raise BusinessValidationError("phone_number is invalid")
     if not company_name:
-        raise ValueError("company_name is required")
+        raise BusinessValidationError("company_name is required")
 
     if session.query(Client).filter(Client.email == email).first():
-        raise ValueError("email already exists")
+        raise BusinessValidationError("email already exists")
 
     client = Client(
         informations=informations,
@@ -79,16 +80,16 @@ def update_client(
     require_permission(user.role.name, CLIENT_UPDATE_OWNED)
 
     if not client_id:
-        raise ValueError("client_id is required")
+        raise BusinessValidationError("client_id is required")
     if not fields:
-        raise ValueError("no fields to update")
+        raise BusinessValidationError("no fields to update")
 
     client = session.query(Client).filter(Client.id == client_id).one_or_none()
     if client is None:
-        raise ValueError("client not found")
+        raise BusinessValidationError("client not found")
 
     if client.sales_contact_id != user.id:
-        raise PermissionError("You are not the sales contact of this client")
+        raise BusinessAuthorizationError("You are not the sales contact of this client")
 
     if "informations" in fields:
         informations = (fields["informations"] or "").strip()
@@ -97,32 +98,32 @@ def update_client(
     if "name" in fields:
         name = (fields["name"] or "").strip()
         if not name:
-            raise ValueError("name is required")
+            raise BusinessValidationError("name is required")
         client.name = name
 
     if "email" in fields:
         email = (fields["email"] or "").strip().lower()
         if not email:
-            raise ValueError("email is required")
+            raise BusinessValidationError("email is required")
         if not _EMAIL_RE.match(email):
-            raise ValueError("email is invalid")
+            raise BusinessValidationError("email is invalid")
         existing = session.query(Client).filter(Client.email == email).one_or_none()
         if existing is not None and existing.id != client.id:
-            raise ValueError("email already exists")
+            raise BusinessValidationError("email already exists")
         client.email = email
 
     if "phone_number" in fields:
         phone_number = (fields["phone_number"] or "").strip()
         if not phone_number:
-            raise ValueError("phone_number is required")
+            raise BusinessValidationError("phone_number is required")
         if not _PHONE_RE.match(phone_number):
-            raise ValueError("phone_number is invalid")
+            raise BusinessValidationError("phone_number is invalid")
         client.phone_number = phone_number
 
     if "company_name" in fields:
         company_name = (fields["company_name"] or "").strip()
         if not company_name:
-            raise ValueError("company_name is required")
+            raise BusinessValidationError("company_name is required")
         client.company_name = company_name
 
     session.commit()

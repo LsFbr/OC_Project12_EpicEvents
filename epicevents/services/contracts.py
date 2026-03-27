@@ -18,16 +18,17 @@ from epicevents.security.permissions import (
 )
 from epicevents.auth.current_user import get_current_user
 from epicevents.models.client import Client
+from epicevents.exceptions import BusinessValidationError, BusinessAuthorizationError
 
 
 def _to_decimal(value: Any, field_name: str) -> Decimal:
     if value is None or value == "":
-        raise ValueError(f"{field_name} is required")
+        raise BusinessValidationError(f"{field_name} is required")
 
     try:
         return Decimal(str(value))
     except (InvalidOperation, ValueError):
-        raise ValueError(f"{field_name} must be a valid decimal amount")
+        raise BusinessValidationError(f"{field_name} must be a valid decimal amount")
 
 
 def get_all_contracts(
@@ -45,22 +46,22 @@ def get_all_contracts(
     statement = select(Contract)
 
     if signed and not_signed:
-        raise ValueError("signed and not_signed filters cannot be used together")
+        raise BusinessValidationError("signed and not_signed filters cannot be used together")
 
     if paid and unpaid:
-        raise ValueError("paid and unpaid filters cannot be used together")
+        raise BusinessValidationError("paid and unpaid filters cannot be used together")
 
     if signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
-        raise PermissionError("only sales can filter by signed contracts")
+        raise BusinessAuthorizationError("only sales can filter by signed contracts")
 
     if not_signed and not has_permission(user.role.name, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED):
-        raise PermissionError("only sales can filter by not signed contracts")
+        raise BusinessAuthorizationError("only sales can filter by not signed contracts")
 
     if unpaid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
-        raise PermissionError("only sales can filter by unpaid contracts")
+        raise BusinessAuthorizationError("only sales can filter by unpaid contracts")
 
     if paid and not has_permission(user.role.name, CONTRACT_FILTER_BY_PAID_UNPAID):
-        raise PermissionError("only sales can filter by paid contracts")
+        raise BusinessAuthorizationError("only sales can filter by paid contracts")
 
     if signed:
         statement = statement.where(Contract.is_signed == True)
@@ -90,21 +91,21 @@ def create_contract(
     require_permission(user.role.name, CONTRACT_CREATE)
 
     if not client_id:
-        raise ValueError("client_id is required")
+        raise BusinessValidationError("client_id is required")
 
     client = session.query(Client).filter(Client.id == client_id).one_or_none()
     if client is None:
-        raise ValueError("client not found")
+        raise BusinessValidationError("client not found")
 
     total_amount = _to_decimal(total_amount, "total_amount")
     rest_amount = _to_decimal(rest_amount, "rest_amount")
 
     if total_amount < 0:
-        raise ValueError("total_amount must be greater than or equal to 0")
+        raise BusinessValidationError("total_amount must be greater than or equal to 0")
     if rest_amount < 0:
-        raise ValueError("rest_amount must be greater than or equal to 0")
+        raise BusinessValidationError("rest_amount must be greater than or equal to 0")
     if rest_amount > total_amount:
-        raise ValueError("rest_amount cannot exceed total_amount")
+        raise BusinessValidationError("rest_amount cannot exceed total_amount")
 
     contract = Contract(
         total_amount=total_amount,
@@ -123,7 +124,7 @@ def create_contract(
             contract_id=contract.id,
             client_id=contract.client_id,
         )
-        
+
     return contract
 
 
@@ -136,13 +137,13 @@ def update_contract(
     user = get_current_user()
 
     if not contract_id:
-        raise ValueError("contract_id is required")
+        raise BusinessValidationError("contract_id is required")
     if not fields:
-        raise ValueError("no fields to update")
+        raise BusinessValidationError("no fields to update")
 
     contract = session.query(Contract).filter(Contract.id == contract_id).one_or_none()
     if contract is None:
-        raise ValueError("contract not found")
+        raise BusinessValidationError("contract not found")
 
 
     can_update_any = has_permission(user.role.name, CONTRACT_UPDATE_ANY) # MANAGEMENT
@@ -152,23 +153,23 @@ def update_contract(
         pass
     elif can_update_owned:
         if contract.client.sales_contact_id != user.id:
-            raise PermissionError("you are not the sales contact of this contract")
+            raise BusinessAuthorizationError("you are not the sales contact of this contract")
     else:
-        raise PermissionError("No permission")
+        raise BusinessAuthorizationError("No permission")
 
     previous_is_signed = contract.is_signed
 
     if "client_id" in fields:
         client_id = fields["client_id"]
         if not client_id:
-            raise ValueError("client_id is required")
+            raise BusinessValidationError("client_id is required")
 
         client = session.query(Client).filter(Client.id == client_id).one_or_none()
         if client is None:
-            raise ValueError("client not found")
+            raise BusinessValidationError("client not found")
 
         if can_update_owned and client.sales_contact_id != user.id:
-            raise PermissionError("you are not the sales contact of this client")
+            raise BusinessAuthorizationError("you are not the sales contact of this client")
 
         contract.client_id = client.id
 
@@ -178,15 +179,15 @@ def update_contract(
     if "total_amount" in fields:
         new_total_amount = _to_decimal(fields["total_amount"], "total_amount")
         if new_total_amount < 0:
-            raise ValueError("total_amount must be greater than or equal to 0")
+            raise BusinessValidationError("total_amount must be greater than or equal to 0")
 
     if "rest_amount" in fields:
         new_rest_amount = _to_decimal(fields["rest_amount"], "rest_amount")
         if new_rest_amount < 0:
-            raise ValueError("rest_amount must be greater than or equal to 0")
+            raise BusinessValidationError("rest_amount must be greater than or equal to 0")
 
     if new_rest_amount > new_total_amount:
-        raise ValueError("rest_amount cannot exceed total_amount")
+        raise BusinessValidationError("rest_amount cannot exceed total_amount")
 
     contract.total_amount = new_total_amount
     contract.rest_amount = new_rest_amount

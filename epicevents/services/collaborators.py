@@ -11,6 +11,7 @@ from epicevents.auth.utils import require_authentication
 from epicevents.security.permissions import READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE, require_permission
 from epicevents.auth.current_user import get_current_user
 from epicevents.constants import PASSWORD_MIN_LENGTH
+from epicevents.exceptions import BusinessValidationError
 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -42,37 +43,37 @@ def create_collaborator(
     require_permission(user.role.name, COLLAB_CREATE)
 
     if employee_number is None:
-        raise ValueError("employee_number is required")
+        raise BusinessValidationError("employee_number is required")
     if not isinstance(employee_number, int):
-        raise ValueError("employee_number must be an integer")
+        raise BusinessValidationError("employee_number must be an integer")
 
     if not full_name:
-        raise ValueError("full_name is required")
+        raise BusinessValidationError("full_name is required")
     if len(full_name) > 64:
-        raise ValueError("full_name must be less than 64 characters")
+        raise BusinessValidationError("full_name must be less than 64 characters")
 
     if not email:
-        raise ValueError("email is required")
+        raise BusinessValidationError("email is required")
     if len(email) > 128:
-        raise ValueError("email must be less than 128 characters")
+        raise BusinessValidationError("email must be less than 128 characters")
     if not _EMAIL_RE.match(email):
-        raise ValueError("email is invalid")
+        raise BusinessValidationError("email is invalid")
 
     if not role_name:
-        raise ValueError("role_name is required")
+        raise BusinessValidationError("role_name is required")
 
     if len(plain_password or "") < PASSWORD_MIN_LENGTH:
-        raise ValueError("password too short")
+        raise BusinessValidationError("password too short")
 
     role = session.query(Role).filter(Role.name == role_name).one_or_none()
     if role is None:
-        raise ValueError("unknown role")
+        raise BusinessValidationError("unknown role")
 
     if session.query(Collaborator).filter(Collaborator.email == email).first():
-        raise ValueError("email already exists")
+        raise BusinessValidationError("email already exists")
 
     if session.query(Collaborator).filter(Collaborator.employee_number == employee_number).first():
-        raise ValueError("employee_number already exists")
+        raise BusinessValidationError("employee_number already exists")
 
     collaborator = Collaborator(
         employee_number=employee_number,
@@ -105,53 +106,53 @@ def update_collaborator(
     require_permission(user.role.name, COLLAB_UPDATE)
 
     if employee_number is None:
-        raise ValueError("employee_number is required")
+        raise BusinessValidationError("employee_number is required")
     if not isinstance(employee_number, int):
-        raise ValueError("employee_number must be an integer")
+        raise BusinessValidationError("employee_number must be an integer")
     if not fields:
-        raise ValueError("no fields to update")
+        raise BusinessValidationError("no fields to update")
 
     collaborator = session.query(Collaborator).filter(Collaborator.employee_number == employee_number).one_or_none()
     if collaborator is None:
-        raise ValueError("collaborator not found")
+        raise BusinessValidationError("collaborator not found")
 
     if "full_name" in fields:
         full_name = (fields["full_name"] or "").strip()
         if not full_name:
-            raise ValueError("full_name is required")
+            raise BusinessValidationError("full_name is required")
         if len(full_name) > 64:
-            raise ValueError("full_name must be less than 64 characters")
+            raise BusinessValidationError("full_name must be less than 64 characters")
         collaborator.full_name = full_name
 
     if "email" in fields:
         email = (fields["email"] or "").strip().lower()
         if not email:
-            raise ValueError("email is required")
+            raise BusinessValidationError("email is required")
         if not _EMAIL_RE.match(email):
-            raise ValueError("email is invalid")
+            raise BusinessValidationError("email is invalid")
         if len(email) > 128:
-            raise ValueError("email must be less than 128 characters")
+            raise BusinessValidationError("email must be less than 128 characters")
         existing = session.query(Collaborator).filter(Collaborator.email == email).one_or_none()
         if existing is not None and existing.id != collaborator.id:
-            raise ValueError("email already exists")
+            raise BusinessValidationError("email already exists")
         collaborator.email = email
 
     if "role_name" in fields:
         role_name = (fields["role_name"] or "").strip().upper()
         if not role_name:
-            raise ValueError("role_name is required")
+            raise BusinessValidationError("role_name is required")
         role = session.query(Role).filter(Role.name == role_name).one_or_none()
         if role is None:
-            raise ValueError("unknown role")
+            raise BusinessValidationError("unknown role")
 
         collaborator.role_id = role.id
 
     if "plain_password" in fields:
         plain_password = (fields["plain_password"] or "").strip()
         if not plain_password:
-            raise ValueError("password is required")
+            raise BusinessValidationError("password is required")
         if len(plain_password) < PASSWORD_MIN_LENGTH:
-            raise ValueError("password too short")
+            raise BusinessValidationError("password too short")
 
         collaborator.password_hash = hash_password(plain_password)
 
@@ -178,9 +179,9 @@ def delete_collaborator(
     require_permission(user.role.name, COLLAB_DELETE)
 
     if employee_number is None:
-        raise ValueError("employee_number is required")
+        raise BusinessValidationError("employee_number is required")
     if not isinstance(employee_number, int):
-        raise ValueError("employee_number must be an integer")
+        raise BusinessValidationError("employee_number must be an integer")
 
     collaborator = (
         session.query(Collaborator)
@@ -188,7 +189,7 @@ def delete_collaborator(
         .one_or_none()
     )
     if collaborator is None:
-        raise ValueError("collaborator not found")
+        raise BusinessValidationError("collaborator not found")
 
     session.delete(collaborator)
     session.commit()

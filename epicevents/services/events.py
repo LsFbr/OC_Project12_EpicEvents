@@ -18,19 +18,20 @@ from epicevents.security.permissions import (
     has_permission,
 )
 from epicevents.auth.current_user import get_current_user
+from epicevents.exceptions import BusinessValidationError, BusinessAuthorizationError
 
 
 def _require_datetime(value: Any, field_name: str) -> datetime:
     if value is None:
-        raise ValueError(f"{field_name} is required")
+        raise BusinessValidationError(f"{field_name} is required")
     if not isinstance(value, datetime):
-        raise ValueError(f"{field_name} must be a datetime")
+        raise BusinessValidationError(f"{field_name} must be a datetime")
     return value
 
 
 def _require_support_collaborator(session: Session, support_contact_id: int) -> Collaborator:
     if not support_contact_id:
-        raise ValueError("support_contact_id is required")
+        raise BusinessValidationError("support_contact_id is required")
 
     collaborator = (
         session.query(Collaborator)
@@ -38,10 +39,10 @@ def _require_support_collaborator(session: Session, support_contact_id: int) -> 
         .one_or_none()
     )
     if collaborator is None:
-        raise ValueError("support collaborator not found")
+        raise BusinessValidationError("support collaborator not found")
 
     if collaborator.role.name != "SUPPORT":
-        raise ValueError("collaborator is not support")
+        raise BusinessValidationError("collaborator is not support")
 
     return collaborator
 
@@ -57,13 +58,13 @@ def get_all_events(
     require_permission(user.role.name, READ_ALL)
 
     if support_contact_id is not None and assigned_to_me:
-        raise ValueError("support_contact_id and assigned_to_me cannot be used together")
+        raise BusinessValidationError("support_contact_id and assigned_to_me cannot be used together")
 
     if support_contact_id is not None and not has_permission(user.role.name, EVENT_FILTER_BY_SUPPORT_CONTACT_ID):
-        raise PermissionError("only management can filter by support_contact_id")
+        raise BusinessAuthorizationError("only management can filter by support_contact_id")
 
     if assigned_to_me and not has_permission(user.role.name, EVENT_FILTER_BY_MINE):
-        raise PermissionError("only support can use the mine filter")
+        raise BusinessAuthorizationError("only support can use the mine filter")
 
     statement = select(Event)
 
@@ -96,34 +97,34 @@ def create_event(
     require_permission(user.role.name, EVENT_CREATE)
 
     if not title:
-        raise ValueError("title is required")
+        raise BusinessValidationError("title is required")
     if not location:
-        raise ValueError("location is required")
+        raise BusinessValidationError("location is required")
     if attendees is None:
-        raise ValueError("attendees is required")
+        raise BusinessValidationError("attendees is required")
     if not isinstance(attendees, int):
-        raise ValueError("attendees must be an integer")
+        raise BusinessValidationError("attendees must be an integer")
     if attendees < 0:
-        raise ValueError("attendees must be greater than or equal to 0")
+        raise BusinessValidationError("attendees must be greater than or equal to 0")
 
     date_start = _require_datetime(date_start, "date_start")
     date_end = _require_datetime(date_end, "date_end")
 
     if date_end < date_start:
-        raise ValueError("date_end must be greater than or equal to date_start")
+        raise BusinessValidationError("date_end must be greater than or equal to date_start")
 
     if not contract_id:
-        raise ValueError("contract_id is required")
+        raise BusinessValidationError("contract_id is required")
 
     contract = session.query(Contract).filter(Contract.id == contract_id).one_or_none()
     if contract is None:
-        raise ValueError("contract not found")
+        raise BusinessValidationError("contract not found")
 
     if not contract.is_signed:
-        raise ValueError("contract must be signed")
+        raise BusinessValidationError("contract must be signed")
 
     if contract.client.sales_contact_id != user.id:
-        raise PermissionError("you are not the sales contact of this contract")
+        raise BusinessAuthorizationError("you are not the sales contact of this contract")
 
     event = Event(
         title=title,
@@ -153,28 +154,28 @@ def update_event(
 
 
     if event_id is None:
-        raise ValueError("event id is required")
+        raise BusinessValidationError("event id is required")
     if not fields:
-        raise ValueError("no fields to update")
+        raise BusinessValidationError("no fields to update")
 
     event = session.query(Event).filter(Event.id == event_id).one_or_none()
     if event is None:
-        raise ValueError("event not found")
+        raise BusinessValidationError("event not found")
 
 
     if event.support_contact_id != user.id:
-        raise PermissionError("you are not the support contact of this event")
+        raise BusinessAuthorizationError("you are not the support contact of this event")
 
     allowed_fields = {"title", "notes", "location", "attendees", "date_start", "date_end"}
 
     for field_name in fields:
         if field_name not in allowed_fields:
-            raise ValueError(f"forbidden field: {field_name}")
+            raise BusinessValidationError(f"forbidden field: {field_name}")
 
     if "title" in fields:
         title = (fields["title"] or "").strip()
         if not title:
-            raise ValueError("title is required")
+            raise BusinessValidationError("title is required")
         event.title = title
 
     if "notes" in fields:
@@ -183,17 +184,17 @@ def update_event(
     if "location" in fields:
         location = (fields["location"] or "").strip()
         if not location:
-            raise ValueError("location is required")
+            raise BusinessValidationError("location is required")
         event.location = location
 
     if "attendees" in fields:
         attendees = fields["attendees"]
         if attendees is None:
-            raise ValueError("attendees is required")
+            raise BusinessValidationError("attendees is required")
         if not isinstance(attendees, int):
-            raise ValueError("attendees must be an integer")
+            raise BusinessValidationError("attendees must be an integer")
         if attendees < 0:
-            raise ValueError("attendees must be greater than or equal to 0")
+            raise BusinessValidationError("attendees must be greater than or equal to 0")
         event.attendees = attendees
 
     new_date_start = event.date_start
@@ -206,7 +207,7 @@ def update_event(
         new_date_end = _require_datetime(fields["date_end"], "date_end")
 
     if new_date_end < new_date_start:
-        raise ValueError("date_end must be greater than or equal to date_start")
+        raise BusinessValidationError("date_end must be greater than or equal to date_start")
 
     event.date_start = new_date_start
     event.date_end = new_date_end
@@ -226,11 +227,11 @@ def assign_support(
     require_permission(user.role.name, EVENT_ASSIGN_SUPPORT)
 
     if event_id is None:
-        raise ValueError("event_id is required")
+        raise BusinessValidationError("event_id is required")
 
     event = session.query(Event).filter(Event.id == event_id).one_or_none()
     if event is None:
-        raise ValueError("event not found")
+        raise BusinessValidationError("event not found")
 
     if support_contact_id is None:
         return event
