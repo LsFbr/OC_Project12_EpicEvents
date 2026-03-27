@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import Any
 
+from epicevents.monitoring.sentry import capture_business_event
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
 from epicevents.security.passwords import hash_password
@@ -83,6 +84,14 @@ def create_collaborator(
     session.add(collaborator)
     session.commit()
     session.refresh(collaborator)
+
+    capture_business_event(
+        "collaborator_created",
+        collaborator_id=collaborator.id,
+        employee_number=collaborator.employee_number,
+        role_name=role.name,
+    )
+
     return collaborator
 
 
@@ -148,6 +157,14 @@ def update_collaborator(
 
     session.commit()
     session.refresh(collaborator)
+
+    capture_business_event(
+        "collaborator_updated",
+        collaborator_id=collaborator.id,
+        employee_number=collaborator.employee_number,
+        updated_fields=sorted(fields.keys()),
+    )
+
     return collaborator
 
 
@@ -175,4 +192,12 @@ def delete_collaborator(
 
     session.delete(collaborator)
     session.commit()
+
+    capture_business_event(
+        "collaborator_deleted",
+        collaborator_id=collaborator.id,
+        employee_number=collaborator.employee_number,
+        role_name=collaborator.role.name,
+    )
+
     return collaborator
