@@ -6,6 +6,7 @@ from epicevents.models.collaborator import Collaborator
 from epicevents.security.passwords import hash_password
 import os
 from epicevents.constants import ROLE_NAMES
+from epicevents.exceptions import ConfigurationError
 
 def seed_roles(session):
     """
@@ -34,12 +35,12 @@ def seed_initial_management(session):
     password = os.getenv("BOOTSTRAP_MANAGEMENT_PASSWORD")
 
     if not all([raw_employee_number, full_name, email, password]):
-        raise ValueError("Missing bootstrap management environment variables.")
+        raise ConfigurationError("Missing bootstrap management environment variables.")
 
     try:
         employee_number = int(raw_employee_number)
     except ValueError as exc:
-        raise ValueError(
+        raise ConfigurationError(
             "BOOTSTRAP_MANAGEMENT_EMPLOYEE_NUMBER must be an integer."
         ) from exc
 
@@ -48,7 +49,7 @@ def seed_initial_management(session):
     ).scalar_one_or_none()
 
     if management_role is None:
-        raise ValueError("MANAGEMENT role not found in database.")
+        raise ConfigurationError("MANAGEMENT role not found in database.")
 
     existing = session.execute(
         select(Collaborator).where(

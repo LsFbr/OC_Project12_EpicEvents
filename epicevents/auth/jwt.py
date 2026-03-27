@@ -6,12 +6,12 @@ import os
 
 from epicevents.models.collaborator import Collaborator
 from epicevents.constants import JWT_ALGORITHM, JWT_TOKEN_EXPIRATION_HOURS
-from epicevents.exceptions import TokenExpiredError, InvalidAuthTokenError
+from epicevents.exceptions import TokenExpiredError, InvalidAuthTokenError, ConfigurationError
 
 SECRET_KEY = os.getenv("EPICEVENTS_SECRET")
 
 if SECRET_KEY is None:
-    raise RuntimeError("EPICEVENTS_SECRET environment variable not set")
+    raise ConfigurationError("EPICEVENTS_SECRET environment variable not set")
 
 def generate_token(user: Collaborator) -> str:
     now = datetime.now(timezone.utc)
