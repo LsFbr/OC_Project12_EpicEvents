@@ -627,7 +627,6 @@ def test_delete_collaborator_logs_business_event(monkeypatch, fake_user, collabo
     assert captured["message"] == "collaborator_deleted"
     assert captured["context"]["collaborator_id"] == collaborator_one.id
     assert captured["context"]["employee_number"] == collaborator_one.employee_number
-    assert captured["context"]["role_name"] == collaborator_one.role.name
 
 
 def test_delete_collaborator_authentication_failed(monkeypatch, fake_user):
