@@ -198,7 +198,6 @@ def delete_collaborator(
         "collaborator_deleted",
         collaborator_id=collaborator.id,
         employee_number=collaborator.employee_number,
-        role_name=collaborator.role.name,
     )
 
     return collaborator
