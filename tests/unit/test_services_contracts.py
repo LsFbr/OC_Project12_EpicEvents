@@ -240,6 +240,74 @@ def test_create_contract_ok(monkeypatch, fake_user, owned_client):
     assert session.committed is True
 
 
+def test_create_contract_logs_business_event_when_contract_is_created_signed(
+    monkeypatch,
+    fake_user,
+    owned_client,
+):
+    session = FakeSession(query_map={Client: [owned_client]})
+
+    allow_authenticated_user(monkeypatch, fake_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts._to_decimal",
+        lambda value, field_name: Decimal(str(value)),
+    )
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.contracts.capture_business_event", fake_capture)
+
+    contract = create_contract(
+        session=session,
+        client_id=owned_client.id,
+        total_amount="1200.50",
+        rest_amount="500.25",
+        is_signed=True,
+    )
+
+    assert contract.is_signed is True
+    assert captured["message"] == "contract_signed"
+    assert captured["context"]["contract_id"] == contract.id
+    assert captured["context"]["client_id"] == owned_client.id
+
+
+def test_create_contract_does_not_log_business_event_when_contract_is_created_unsigned(
+    monkeypatch,
+    fake_user,
+    owned_client,
+):
+    session = FakeSession(query_map={Client: [owned_client]})
+
+    allow_authenticated_user(monkeypatch, fake_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts._to_decimal",
+        lambda value, field_name: Decimal(str(value)),
+    )
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.contracts.capture_business_event", fake_capture)
+
+    contract = create_contract(
+        session=session,
+        client_id=owned_client.id,
+        total_amount="1200.50",
+        rest_amount="500.25",
+        is_signed=False,
+    )
+
+    assert contract.is_signed is False
+    assert captured == {}
+
+
 def test_create_contract_authentication_failed(monkeypatch, fake_user):
     session = FakeSession()
 
@@ -403,6 +471,97 @@ def test_update_contract_ok_as_sales_owned(monkeypatch, sales_user, owned_contra
     assert contract.rest_amount == Decimal("400.00")
     assert contract.is_signed is True
     assert session.committed is True
+
+
+def test_update_contract_logs_business_event_when_contract_is_signed(monkeypatch, sales_user, second_owned_contract):
+    session = FakeSession(query_map={Contract: [second_owned_contract]})
+
+    monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: sales_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_OWNED,
+    )
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.contracts.capture_business_event", fake_capture)
+
+    contract = update_contract(
+        session=session,
+        contract_id=second_owned_contract.id,
+        is_signed=True,
+    )
+
+    assert contract.is_signed is True
+    assert captured["message"] == "contract_signed"
+    assert captured["context"]["contract_id"] == second_owned_contract.id
+    assert captured["context"]["client_id"] == second_owned_contract.client_id
+
+
+def test_update_contract_does_not_log_business_event_if_already_signed(monkeypatch, sales_user, owned_contract):
+    session = FakeSession(query_map={Contract: [owned_contract]})
+
+    monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: sales_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_OWNED,
+    )
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.contracts.capture_business_event", fake_capture)
+    monkeypatch.setattr(
+        "epicevents.services.contracts._to_decimal",
+        lambda value, field_name: Decimal(str(value)),
+    )
+
+    contract = update_contract(
+        session=session,
+        contract_id=owned_contract.id,
+        total_amount="1500.00",
+        rest_amount="400.00",
+    )
+
+    assert contract.id == owned_contract.id
+    assert captured == {}
+
+
+def test_update_contract_does_not_log_business_event_when_signed_stays_true(monkeypatch, sales_user, owned_contract):
+    session = FakeSession(query_map={Contract: [owned_contract]})
+
+    monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
+    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: sales_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_OWNED,
+    )
+
+    captured = {}
+
+    def fake_capture(message, **context):
+        captured["message"] = message
+        captured["context"] = context
+
+    monkeypatch.setattr("epicevents.services.contracts.capture_business_event", fake_capture)
+
+    contract = update_contract(
+        session=session,
+        contract_id=owned_contract.id,
+        is_signed=True,
+    )
+
+    assert contract.is_signed is True
+    assert captured == {}
 
 
 def test_update_contract_authentication_failed(monkeypatch, fake_user):
