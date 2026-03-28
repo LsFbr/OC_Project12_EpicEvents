@@ -40,6 +40,9 @@ from epicevents.cli.prompt_helpers import (
 )
 
 def handle_cli_error(action_label: str, exc: Exception) -> None:
+    if isinstance(exc, click.Abort):
+        return
+
     if isinstance(exc, (AuthenticationError, BusinessAuthorizationError, BusinessValidationError)):
         click.echo(f"{action_label} failed: {exc}", err=True)
         return
@@ -60,6 +63,7 @@ def login_command():
     try:
         login(email, password)
         click.echo("Login successful")
+
     except Exception as e:
         handle_cli_error("Login", e)
 
