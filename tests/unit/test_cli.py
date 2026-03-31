@@ -1,5 +1,3 @@
-import pytest
-
 from epicevents.cli import cli as cli_module
 from tests.conftest import FakeUser, FakeClient, FakeContract, FakeEvent
 from epicevents.exceptions import InvalidCredentialsError, NotLoggedInError, BusinessValidationError
