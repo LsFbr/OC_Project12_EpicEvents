@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
 
-from tests.conftest import FakeClient, FakeContract, FakeEvent, FakeSession, FakeUser
+from tests.conftest import FakeClient, FakeContract, FakeEvent, FakeSession
 from epicevents.security.permissions import EVENT_FILTER_BY_SUPPORT_CONTACT_ID, EVENT_FILTER_BY_MINE
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.contract import Contract
