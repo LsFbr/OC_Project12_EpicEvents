@@ -3,6 +3,7 @@ from epicevents.auth.jwt import generate_token, decode_token
 from epicevents.exceptions import InvalidAuthTokenError
 from epicevents.exceptions import TokenExpiredError
 
+
 def test_generate_token_returns_string(fake_user):
     token = generate_token(fake_user)
 

@@ -8,6 +8,7 @@ import os
 from epicevents.constants import ROLE_NAMES
 from epicevents.exceptions import ConfigurationError
 
+
 def seed_roles(session):
     """
     Seed the roles in the database.

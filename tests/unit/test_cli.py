@@ -2,6 +2,7 @@ from epicevents.cli import cli as cli_module
 from tests.conftest import FakeUser, FakeClient, FakeContract, FakeEvent
 from epicevents.exceptions import InvalidCredentialsError, NotLoggedInError, BusinessValidationError
 
+
 def capture_echo(monkeypatch):
     echoed = []
 
@@ -101,7 +102,6 @@ def test_logout_command_failure(monkeypatch):
 
     monkeypatch.setattr("epicevents.cli.cli.logout", logout_failure)
 
-
     cli_module.logout_command.callback()
 
     assert echoed == [("Logout failed: You were not logged in", True)]
@@ -130,6 +130,7 @@ def test_logout_command_unexpected_error(monkeypatch):
 # -------------------------
 # collaborators
 # -------------------------
+
 
 def test_collaborators_list_command_success(monkeypatch, fake_session, management_user):
     echoed = capture_echo(monkeypatch)

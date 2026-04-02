@@ -16,8 +16,9 @@ from epicevents.exceptions import BusinessValidationError
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+
 def get_all_collaborators(session: Session) -> list[Collaborator]:
-    
+
     require_authentication()
     user = get_current_user()
     require_permission(user.role.name, READ_ALL)

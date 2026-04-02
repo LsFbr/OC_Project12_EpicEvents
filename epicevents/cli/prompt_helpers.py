@@ -6,6 +6,7 @@ from epicevents.constants import PASSWORD_MIN_LENGTH, ROLE_NAMES
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+
 def prompt_text(label: str, required: bool = True, max_length: int | None = None) -> str | None:
     """
     Prompt the user for a text input.

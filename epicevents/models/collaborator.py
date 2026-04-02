@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from epicevents.models.base import Base
 from sqlalchemy.orm import relationship
 
+
 class Collaborator(Base):
     __tablename__ = "collaborators"
 

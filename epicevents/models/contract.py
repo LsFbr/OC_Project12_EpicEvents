@@ -3,6 +3,7 @@ from epicevents.models.base import Base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
+
 class Contract(Base):
     __tablename__ = "contracts"
     id = Column(Integer, primary_key=True)

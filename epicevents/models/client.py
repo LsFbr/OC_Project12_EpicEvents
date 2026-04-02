@@ -3,6 +3,7 @@ from epicevents.models.base import Base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
+
 class Client(Base):
     __tablename__ = "clients"
     id = Column(Integer, primary_key=True)

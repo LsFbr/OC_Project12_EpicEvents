@@ -152,7 +152,6 @@ def update_event(
     user = get_current_user()
     require_permission(user.role.name, EVENT_UPDATE_ASSIGNED)
 
-
     if event_id is None:
         raise BusinessValidationError("event id is required")
     if not fields:
@@ -161,7 +160,6 @@ def update_event(
     event = session.query(Event).filter(Event.id == event_id).one_or_none()
     if event is None:
         raise BusinessValidationError("event not found")
-
 
     if event.support_contact_id != user.id:
         raise BusinessAuthorizationError("you are not the support contact of this event")

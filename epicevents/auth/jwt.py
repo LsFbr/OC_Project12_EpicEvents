@@ -13,6 +13,7 @@ SECRET_KEY = os.getenv("EPICEVENTS_SECRET")
 if SECRET_KEY is None:
     raise ConfigurationError("EPICEVENTS_SECRET environment variable not set")
 
+
 def generate_token(user: Collaborator) -> str:
     now = datetime.now(timezone.utc)
 

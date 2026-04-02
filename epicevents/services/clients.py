@@ -23,6 +23,7 @@ def get_all_clients(session: Session) -> list[Client]:
     result = session.execute(select(Client))
     return result.scalars().all()
 
+
 def create_client(
     session: Session,
     informations: str,
@@ -69,6 +70,7 @@ def create_client(
     session.commit()
     session.refresh(client)
     return client
+
 
 def update_client(
     session: Session,

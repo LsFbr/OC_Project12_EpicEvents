@@ -32,6 +32,6 @@ def login(email: str, password: str) -> str:
         save_token(token)
 
         return token
-    
+
     finally:
         session.close()

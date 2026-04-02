@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 from epicevents.models.base import Base
 from sqlalchemy.orm import relationship
 
+
 class Role(Base):
     __tablename__ = "roles"
 

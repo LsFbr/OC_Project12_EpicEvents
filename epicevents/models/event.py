@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime
 from epicevents.models.base import Base
 from sqlalchemy.orm import relationship
 
+
 class Event(Base):
     __tablename__ = "events"
     id = Column(Integer, primary_key=True)

@@ -499,7 +499,7 @@ def test_assign_support_rejects_event_not_found(monkeypatch, fake_user):
     session = FakeSession(query_map={Event: []})
 
     allow_authenticated_user(monkeypatch, fake_user)
-    
+
     monkeypatch.setattr("epicevents.services.events._require_support_collaborator", lambda session, support_contact_id: fake_user)
 
     with pytest.raises(BusinessValidationError, match="event not found"):

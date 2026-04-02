@@ -145,9 +145,8 @@ def update_contract(
     if contract is None:
         raise BusinessValidationError("contract not found")
 
-
-    can_update_any = has_permission(user.role.name, CONTRACT_UPDATE_ANY) # MANAGEMENT
-    can_update_owned = has_permission(user.role.name, CONTRACT_UPDATE_OWNED) # SALES
+    can_update_any = has_permission(user.role.name, CONTRACT_UPDATE_ANY)  # MANAGEMENT
+    can_update_owned = has_permission(user.role.name, CONTRACT_UPDATE_OWNED)  # SALES
 
     if can_update_any:
         pass

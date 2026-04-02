@@ -367,6 +367,7 @@ def test_create_collaborator_logs_business_event(monkeypatch, fake_user, sales_r
 # update_collaborator
 # -------------------------
 
+
 def test_update_collaborator_ok(monkeypatch, fake_user, collaborator_one, support_role):
     session = FakeSession(
         query_map={

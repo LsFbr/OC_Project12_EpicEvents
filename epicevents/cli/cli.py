@@ -9,7 +9,7 @@ from epicevents.security.permissions import (
     require_permission, has_permission,
     READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE,
     CLIENT_CREATE, CLIENT_UPDATE_OWNED,
-    CONTRACT_CREATE, CONTRACT_UPDATE_ANY, CONTRACT_UPDATE_OWNED, 
+    CONTRACT_CREATE, CONTRACT_UPDATE_ANY, CONTRACT_UPDATE_OWNED,
     CONTRACT_FILTER_BY_PAID_UNPAID, CONTRACT_FILTER_BY_SIGNED_NOT_SIGNED,
     EVENT_CREATE, EVENT_UPDATE_ASSIGNED, EVENT_ASSIGN_SUPPORT,
     EVENT_FILTER_BY_SUPPORT_CONTACT_ID, EVENT_FILTER_BY_MINE,
@@ -18,7 +18,7 @@ from epicevents.security.permissions import (
 from epicevents.auth.login import login
 from epicevents.auth.logout import logout
 from epicevents.services.collaborators import (
-get_all_collaborators, create_collaborator, update_collaborator, delete_collaborator
+    get_all_collaborators, create_collaborator, update_collaborator, delete_collaborator
 )
 from epicevents.services.clients import (
     get_all_clients, create_client, update_client,
@@ -39,6 +39,7 @@ from epicevents.cli.prompt_helpers import (
     prompt_datetime,
 )
 
+
 def handle_cli_error(action_label: str, exc: Exception) -> None:
     if isinstance(exc, click.Abort):
         return
@@ -50,10 +51,12 @@ def handle_cli_error(action_label: str, exc: Exception) -> None:
     capture_unexpected_exception(exc, action=action_label)
     click.echo(f"{action_label} failed: unexpected error", err=True)
 
+
 @click.group()
 def cli():
     """CLI Epic Events."""
     pass
+
 
 @cli.command(name="login")
 def login_command():
@@ -67,6 +70,7 @@ def login_command():
     except Exception as e:
         handle_cli_error("Login", e)
 
+
 @cli.command(name="logout")
 def logout_command():
     """Logout from the application."""
@@ -76,10 +80,12 @@ def logout_command():
     except Exception as e:
         handle_cli_error("Logout", e)
 
+
 @cli.group()
 def collaborators():
     """Collaborators management."""
     pass
+
 
 @collaborators.command(name="list")
 def collaborators_list_command():
@@ -89,7 +95,7 @@ def collaborators_list_command():
         require_authentication()
         user = get_current_user()
         require_permission(user.role.name, READ_ALL)
-        
+
         collaborators = get_all_collaborators(session)
 
         if not collaborators:
@@ -110,6 +116,7 @@ def collaborators_list_command():
         handle_cli_error("Collaborators list", e)
     finally:
         session.close()
+
 
 @collaborators.command(name="create")
 def collaborators_create_command():
@@ -143,6 +150,7 @@ def collaborators_create_command():
         handle_cli_error("Collaborators create", e)
     finally:
         session.close()
+
 
 @collaborators.command(name="update")
 def collaborators_update_command():
@@ -186,6 +194,7 @@ def collaborators_update_command():
     finally:
         session.close()
 
+
 @collaborators.command(name="delete")
 def collaborators_delete_command():
     """Delete a collaborator (MANAGEMENT)."""
@@ -210,6 +219,7 @@ def clients():
     """Clients management."""
     pass
 
+
 @clients.command(name="list")
 def clients_list_command():
     """List all clients."""
@@ -224,7 +234,6 @@ def clients_list_command():
         if not clients:
             click.echo("No clients found.")
             return
-
 
         click.echo("ID | Name | Email | Phone | Company | Informations | Sales Contact ID | Sales Contact Name")
         click.echo("--------------------------------------------------------")
@@ -245,6 +254,7 @@ def clients_list_command():
         handle_cli_error("Clients list", e)
     finally:
         session.close()
+
 
 @clients.command(name="create")
 def clients_create_command():
@@ -292,6 +302,7 @@ def clients_create_command():
         handle_cli_error("Clients create", e)
     finally:
         session.close()
+
 
 @clients.command(name="update")
 def clients_update_command():
@@ -356,6 +367,7 @@ def contracts():
     """Contracts management."""
     pass
 
+
 @contracts.command(name="list")
 @click.option("--signed", is_flag=True, help="Show only signed contracts.")
 @click.option("--not-signed", is_flag=True, help="Show only unsigned contracts.")
@@ -419,6 +431,7 @@ def contracts_list_command(signed: bool, not_signed: bool, unpaid: bool, paid: b
     finally:
         session.close()
 
+
 @contracts.command(name="create")
 def contracts_create_command():
     """Create a new contract (SALES and owner)."""
@@ -464,6 +477,7 @@ def contracts_create_command():
     finally:
         session.close()
 
+
 @contracts.command(name="update")
 def contracts_update_command():
     """Update a contract (MANAGEMENT, or SALES and owner)."""
@@ -477,7 +491,7 @@ def contracts_update_command():
 
         if not can_update_any and not can_update_owned:
             raise BusinessAuthorizationError("You do not have permission to update this contract")
-        
+
         click.echo("Enter the details for the contract to update (marked with * are required):")
         fields = {}
 
@@ -521,6 +535,7 @@ def contracts_update_command():
 def events():
     """Events management."""
     pass
+
 
 @events.command(name="list")
 @click.option("--support-contact-id", type=int, default=None, help="Filter events by support collaborator id (MANAGEMENT).")
@@ -572,6 +587,7 @@ def events_list_command(support_contact_id: int | None, mine: bool):
         handle_cli_error("Events list", e)
     finally:
         session.close()
+
 
 @events.command(name="create")
 def events_create_command():
@@ -626,6 +642,7 @@ def events_create_command():
         handle_cli_error("Events create", e)
     finally:
         session.close()
+
 
 @events.command(name="update")
 def events_update_command():
@@ -685,6 +702,7 @@ def events_update_command():
         handle_cli_error("Events update", e)
     finally:
         session.close()
+
 
 @events.command(name="assign-support")
 def events_assign_support_command():

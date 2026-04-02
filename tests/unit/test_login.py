@@ -6,9 +6,6 @@ from epicevents.models.collaborator import Collaborator
 from epicevents.exceptions import InvalidCredentialsError
 
 
-
-
-
 def test_login_user_not_found(monkeypatch, fake_session):
 
     monkeypatch.setattr("epicevents.auth.login.SessionLocal", lambda: fake_session)
