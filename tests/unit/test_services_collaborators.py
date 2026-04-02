@@ -1,6 +1,6 @@
 import pytest
 
-from tests.conftest import FakeSession, FakeUser, FakeRole
+from tests.conftest import FakeSession, FakeUser
 from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
