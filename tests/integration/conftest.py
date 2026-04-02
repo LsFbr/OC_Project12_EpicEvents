@@ -6,12 +6,12 @@ from click.testing import CliRunner
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-os.environ["EPICEVENTS_SECRET"] = "test-secret-test-secret-test-secret"
-
 from epicevents.models.base import Base
 from epicevents.models.role import Role
 from epicevents.models.collaborator import Collaborator
 from epicevents.security.passwords import hash_password
+
+os.environ["EPICEVENTS_SECRET"] = "test-secret-test-secret-test-secret"
 
 
 @pytest.fixture
