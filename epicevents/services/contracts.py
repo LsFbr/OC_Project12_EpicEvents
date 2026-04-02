@@ -64,10 +64,10 @@ def get_all_contracts(
         raise BusinessAuthorizationError("only sales can filter by paid contracts")
 
     if signed:
-        statement = statement.where(Contract.is_signed == True)
+        statement = statement.where(Contract.is_signed.is_(True))
 
     if not_signed:
-        statement = statement.where(Contract.is_signed == False)
+        statement = statement.where(Contract.is_signed.is_(False))
 
     if unpaid:
         statement = statement.where(Contract.rest_amount > 0)
