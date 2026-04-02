@@ -3,3 +3,4 @@ venv_OC12/
 __pycache__/
 .pytest_cache/
 .coverage
+reports/ 
