@@ -19,7 +19,12 @@ def get_current_user() -> Collaborator:
 
     try:
         # Load the collaborator with the role
-        user = session.query(Collaborator).options(joinedload(Collaborator.role)).filter_by(id=payload["user_id"]).first()
+        user = (
+            session.query(Collaborator)
+            .options(joinedload(Collaborator.role))
+            .filter_by(id=payload["user_id"])
+            .first()
+        )
 
         if user is None:
             raise UserNotFoundError("User no longer exists")

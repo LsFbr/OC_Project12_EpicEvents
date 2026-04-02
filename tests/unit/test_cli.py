@@ -306,7 +306,11 @@ def test_clients_list_command_success(monkeypatch, fake_session, sales_user):
     assert echoed == [
         ("ID | Name | Email | Phone | Company | Informations | Sales Contact ID | Sales Contact Name", False),
         ("--------------------------------------------------------", False),
-        (f"1 | Client One | client1@example.com | +33611111111 | Company One | Info One | {sales_user.id} | {sales_user.full_name}", False),
+        (
+            f"1 | Client One | client1@example.com | +33611111111 | Company One | Info One | {sales_user.id} | "
+            f"{sales_user.full_name}",
+            False,
+        ),
     ]
 
 
@@ -400,8 +404,16 @@ def test_contracts_list_command_success(monkeypatch, fake_session, sales_user):
 
     cli_module.contracts_list_command.callback(False, False, False, False)
 
-    assert echoed[0] == ("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name", False)
-    assert echoed[2] == (f"1 | 1000.00 | 500.00 | Yes | 1 | Client One | {sales_user.id} | {sales_user.full_name}", False)
+    assert echoed[0] == (
+        "ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | "
+        "Support Contact Name",
+        False,
+    )
+    assert echoed[2] == (
+        f"1 | 1000.00 | 500.00 | Yes | 1 | Client One | {sales_user.id} | "
+        f"{sales_user.full_name}",
+        False,
+    )
 
 
 def test_contracts_create_command_success(monkeypatch, fake_session, sales_user):
@@ -413,7 +425,10 @@ def test_contracts_create_command_success(monkeypatch, fake_session, sales_user)
 
     allow_cli_auth(monkeypatch, sales_user)
     monkeypatch.setattr("epicevents.cli.cli.SessionLocal", lambda: fake_session)
-    monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda *args, **kwargs: "1000.00" if args[0] == "Total Amount" else "500.00")
+    monkeypatch.setattr(
+        "epicevents.cli.cli.prompt_text",
+        lambda *args, **kwargs: "1000.00" if args[0] == "Total Amount" else "500.00",
+    )
     monkeypatch.setattr("epicevents.cli.cli.prompt_bool", lambda *args, **kwargs: True)
     monkeypatch.setattr("epicevents.cli.cli.prompt_int", lambda *args, **kwargs: 1)
     monkeypatch.setattr("epicevents.cli.cli.create_contract", lambda *args, **kwargs: contract)
@@ -473,8 +488,16 @@ def test_events_list_command_success(monkeypatch, fake_session, support_user):
 
     cli_module.events_list_command.callback(None, False)
 
-    assert echoed[0] == ("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name", False)
-    assert echoed[2] == (f"1 | Event One | Paris | 50 | 2026-01-01 09:00:00 | 2026-01-01 17:00:00 | 1 | {support_user.id} | {support_user.full_name}", False)
+    assert echoed[0] == (
+        "ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | "
+        "Support Contact Name",
+        False,
+    )
+    assert echoed[2] == (
+        f"1 | Event One | Paris | 50 | 2026-01-01 09:00:00 | 2026-01-01 17:00:00 | 1 | "
+        f"{support_user.id} | {support_user.full_name}",
+        False,
+    )
 
 
 def test_events_create_command_success(monkeypatch, fake_session, sales_user):

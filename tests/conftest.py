@@ -222,14 +222,32 @@ def fake_home(tmp_path, monkeypatch):
 
 @pytest.fixture
 def management_user():
-    return FakeUser(user_id=10, employee_number=10, full_name="Management User", email="management@test.com", role_name="MANAGEMENT")
+    return FakeUser(
+        user_id=10,
+        employee_number=10,
+        full_name="Management User",
+        email="management@test.com",
+        role_name="MANAGEMENT",
+    )
 
 
 @pytest.fixture
 def sales_user():
-    return FakeUser(user_id=20, employee_number=20, full_name="Sales User", email="sales@test.com", role_name="SALES")
+    return FakeUser(
+        user_id=20,
+        employee_number=20,
+        full_name="Sales User",
+        email="sales@test.com",
+        role_name="SALES",
+    )
 
 
 @pytest.fixture
 def support_user():
-    return FakeUser(user_id=30, employee_number=30, full_name="Support User", email="support@test.com", role_name="SUPPORT")
+    return FakeUser(
+        user_id=30,
+        employee_number=30,
+        full_name="Support User",
+        email="support@test.com",
+        role_name="SUPPORT",
+    )

@@ -411,7 +411,10 @@ def contracts_list_command(signed: bool, not_signed: bool, unpaid: bool, paid: b
             click.echo("No contracts found.")
             return
 
-        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo(
+            "ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | "
+            "Support Contact ID | Support Contact Name"
+        )
         click.echo("-----------------------------------------------------------------")
         for contract in contracts:
             is_signed_display = "Yes" if contract.is_signed else "No"
@@ -459,7 +462,10 @@ def contracts_create_command():
         is_signed = "Yes" if contract.is_signed else "No"
 
         click.echo(f"Contract {contract.id} created successfully.")
-        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo(
+            "ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | "
+            "Support Contact ID | Support Contact Name"
+        )
         click.echo("-----------------------------------------------------------------")
         click.echo(
             f"{contract.id} | "
@@ -512,7 +518,10 @@ def contracts_update_command():
         is_signed = "Yes" if contract.is_signed else "No"
 
         click.echo(f"Contract {contract.id} updated successfully.")
-        click.echo("ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | Support Contact ID | Support Contact Name")
+        click.echo(
+            "ID | Total Amount | Rest Amount | Signed | Client ID | Client Name | "
+            "Support Contact ID | Support Contact Name"
+        )
         click.echo("-----------------------------------------------------------------")
         click.echo(
             f"{contract.id} | "
@@ -538,7 +547,12 @@ def events():
 
 
 @events.command(name="list")
-@click.option("--support-contact-id", type=int, default=None, help="Filter events by support collaborator id (MANAGEMENT).")
+@click.option(
+    "--support-contact-id",
+    type=int,
+    default=None,
+    help="Filter events by support collaborator id (MANAGEMENT).",
+)
 @click.option("--mine", is_flag=True, help="Show only events assigned to the connected support collaborator.")
 def events_list_command(support_contact_id: int | None, mine: bool):
     """List all events."""
@@ -564,8 +578,11 @@ def events_list_command(support_contact_id: int | None, mine: bool):
             click.echo("No events found.")
             return
 
-        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
-        click.echo("--------------------------------------------------------------------------------------------------------------")
+        click.echo(
+            "ID | Title | Location | Attendees | Start | End | Contract ID | "
+            "Support Contact ID | Support Contact Name"
+        )
+        click.echo("-" * 118)
         for event in events:
             support_contact_id_value = event.support_contact_id if event.support_contact_id is not None else "N/A"
             support_contact_name = (
@@ -625,8 +642,11 @@ def events_create_command():
         )
 
         click.echo(f"Event {event.title} created successfully.")
-        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
-        click.echo("--------------------------------------------------------------------------------------------------------------")
+        click.echo(
+            "ID | Title | Location | Attendees | Start | End | Contract ID | "
+            "Support Contact ID | Support Contact Name"
+        )
+        click.echo("-" * 118)
         click.echo(
             f"{event.id} | "
             f"{event.title} | "
@@ -685,8 +705,11 @@ def events_update_command():
         )
 
         click.echo(f"Event {event.title} updated successfully.")
-        click.echo("ID | Title | Location | Attendees | Start | End | Contract ID | Support Contact ID | Support Contact Name")
-        click.echo("--------------------------------------------------------------------------------------------------------------")
+        click.echo(
+            "ID | Title | Location | Attendees | Start | End | Contract ID | "
+            "Support Contact ID | Support Contact Name"
+        )
+        click.echo("-" * 118)
         click.echo(
             f"{event.id} | "
             f"{event.title} | "

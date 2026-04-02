@@ -1,7 +1,12 @@
 import pytest
 
 from tests.conftest import FakeSession, FakeUser
-from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
+from epicevents.exceptions import (
+    NotLoggedInError,
+    UserNotFoundError,
+    BusinessAuthorizationError,
+    BusinessValidationError,
+)
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
 from epicevents.services.collaborators import (
@@ -319,7 +324,14 @@ def test_create_collaborator_rejects_duplicate_employee_number(monkeypatch, fake
     allow_authenticated_user(monkeypatch, fake_user)
 
     with pytest.raises(BusinessValidationError, match="employee_number already exists"):
-        create_collaborator(session, collaborator_three.employee_number, "Collab", "new@example.com", "SALES", "S3cretPwd!")
+        create_collaborator(
+            session,
+            collaborator_three.employee_number,
+            "Collab",
+            "new@example.com",
+            "SALES",
+            "S3cretPwd!",
+        )
 
 
 def test_create_collaborator_rejects_short_password(monkeypatch, fake_user):

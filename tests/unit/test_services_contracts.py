@@ -15,7 +15,12 @@ from epicevents.security.permissions import (
     CONTRACT_UPDATE_ANY,
     CONTRACT_UPDATE_OWNED,
 )
-from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
+from epicevents.exceptions import (
+    NotLoggedInError,
+    UserNotFoundError,
+    BusinessAuthorizationError,
+    BusinessValidationError,
+)
 
 
 def raise_authentication_failed():
@@ -426,7 +431,10 @@ def test_update_contract_ok_as_management(monkeypatch, management_user, owned_co
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
     monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
     monkeypatch.setattr(
         "epicevents.services.contracts._to_decimal",
         lambda value, field_name: Decimal(str(value)),
@@ -649,14 +657,22 @@ def test_update_contract_rejects_client_not_found(monkeypatch, management_user, 
     )
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
 
     with pytest.raises(BusinessValidationError, match="client not found"):
         update_contract(session, 1, client_id=999)
 
 
-def test_update_contract_rejects_sales_changing_to_unowned_client(monkeypatch, sales_user, owned_contract, unowned_client):
+def test_update_contract_rejects_sales_changing_to_unowned_client(
+    monkeypatch, sales_user, owned_contract, unowned_client
+):
     session = FakeSession(
         query_map={
             Contract: [owned_contract],
@@ -665,7 +681,10 @@ def test_update_contract_rejects_sales_changing_to_unowned_client(monkeypatch, s
     )
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: sales_user)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: sales_user,
+    )
     monkeypatch.setattr(
         "epicevents.services.contracts.has_permission",
         lambda role, action: action == CONTRACT_UPDATE_OWNED,
@@ -675,7 +694,9 @@ def test_update_contract_rejects_sales_changing_to_unowned_client(monkeypatch, s
         update_contract(session, 1, client_id=unowned_client.id)
 
 
-def test_update_contract_allows_sales_changing_to_owned_client(monkeypatch, sales_user, owned_contract, second_owned_client):
+def test_update_contract_allows_sales_changing_to_owned_client(
+    monkeypatch, sales_user, owned_contract, second_owned_client
+):
     session = FakeSession(
         query_map={
             Contract: [owned_contract],
@@ -696,34 +717,58 @@ def test_update_contract_allows_sales_changing_to_owned_client(monkeypatch, sale
     assert session.committed is True
 
 
-def test_update_contract_rejects_invalid_total_amount(monkeypatch, management_user, owned_contract):
+def test_update_contract_rejects_invalid_total_amount(
+    monkeypatch, management_user, owned_contract
+):
     session = FakeSession(query_map={Contract: [owned_contract]})
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
 
     with pytest.raises(BusinessValidationError, match="total_amount must be a valid decimal amount"):
         update_contract(session, 1, total_amount="abc")
 
 
-def test_update_contract_rejects_invalid_rest_amount(monkeypatch, management_user, owned_contract):
+def test_update_contract_rejects_invalid_rest_amount(
+    monkeypatch, management_user, owned_contract
+):
     session = FakeSession(query_map={Contract: [owned_contract]})
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
 
     with pytest.raises(BusinessValidationError, match="rest_amount must be a valid decimal amount"):
         update_contract(session, 1, rest_amount="abc")
 
 
-def test_update_contract_rejects_negative_total_amount(monkeypatch, management_user, owned_contract):
+def test_update_contract_rejects_negative_total_amount(
+    monkeypatch, management_user, owned_contract
+):
     session = FakeSession(query_map={Contract: [owned_contract]})
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
     monkeypatch.setattr(
         "epicevents.services.contracts._to_decimal",
         lambda value, field_name: Decimal(str(value)),
@@ -733,12 +778,20 @@ def test_update_contract_rejects_negative_total_amount(monkeypatch, management_u
         update_contract(session, 1, total_amount="-1")
 
 
-def test_update_contract_rejects_negative_rest_amount(monkeypatch, management_user, owned_contract):
+def test_update_contract_rejects_negative_rest_amount(
+    monkeypatch, management_user, owned_contract
+):
     session = FakeSession(query_map={Contract: [owned_contract]})
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
     monkeypatch.setattr(
         "epicevents.services.contracts._to_decimal",
         lambda value, field_name: Decimal(str(value)),
@@ -748,12 +801,20 @@ def test_update_contract_rejects_negative_rest_amount(monkeypatch, management_us
         update_contract(session, 1, rest_amount="-1")
 
 
-def test_update_contract_rejects_rest_amount_exceeds_total_amount(monkeypatch, management_user, owned_contract):
+def test_update_contract_rejects_rest_amount_exceeds_total_amount(
+    monkeypatch, management_user, owned_contract
+):
     session = FakeSession(query_map={Contract: [owned_contract]})
 
     monkeypatch.setattr("epicevents.services.contracts.require_authentication", lambda: None)
-    monkeypatch.setattr("epicevents.services.contracts.get_current_user", lambda: management_user)
-    monkeypatch.setattr("epicevents.services.contracts.has_permission", lambda role, action: action == CONTRACT_UPDATE_ANY)
+    monkeypatch.setattr(
+        "epicevents.services.contracts.get_current_user",
+        lambda: management_user,
+    )
+    monkeypatch.setattr(
+        "epicevents.services.contracts.has_permission",
+        lambda role, action: action == CONTRACT_UPDATE_ANY,
+    )
     monkeypatch.setattr(
         "epicevents.services.contracts._to_decimal",
         lambda value, field_name: Decimal(str(value)),

@@ -1,7 +1,12 @@
 import pytest
 
 from tests.conftest import FakeClient, FakeSession
-from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
+from epicevents.exceptions import (
+    NotLoggedInError,
+    UserNotFoundError,
+    BusinessAuthorizationError,
+    BusinessValidationError,
+)
 from epicevents.models.client import Client
 from epicevents.services.clients import (
     get_all_clients,

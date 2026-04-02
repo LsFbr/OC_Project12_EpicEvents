@@ -14,7 +14,12 @@ from epicevents.services.events import (
     update_event,
     assign_support,
 )
-from epicevents.exceptions import NotLoggedInError, UserNotFoundError, BusinessAuthorizationError, BusinessValidationError
+from epicevents.exceptions import (
+    NotLoggedInError,
+    UserNotFoundError,
+    BusinessAuthorizationError,
+    BusinessValidationError,
+)
 
 
 def raise_authentication_failed():
@@ -196,7 +201,10 @@ def test_get_all_events_filter_by_support_contact_id_ok(monkeypatch, fake_user, 
     session = FakeSession(execute_items=[event_assigned_to_support])
 
     allow_authenticated_user(monkeypatch, fake_user)
-    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: action == EVENT_FILTER_BY_SUPPORT_CONTACT_ID)
+    monkeypatch.setattr(
+        "epicevents.services.events.has_permission",
+        lambda role, action: action == EVENT_FILTER_BY_SUPPORT_CONTACT_ID,
+    )
 
     events = get_all_events(session, support_contact_id=event_assigned_to_support.support_contact_id)
 
@@ -219,7 +227,10 @@ def test_get_all_events_filter_by_mine_ok(monkeypatch, support_user, event_assig
     session = FakeSession(execute_items=[event_assigned_to_support])
 
     allow_authenticated_user(monkeypatch, support_user)
-    monkeypatch.setattr("epicevents.services.events.has_permission", lambda role, action: action == EVENT_FILTER_BY_MINE)
+    monkeypatch.setattr(
+        "epicevents.services.events.has_permission",
+        lambda role, action: action == EVENT_FILTER_BY_MINE,
+    )
 
     events = get_all_events(session, assigned_to_me=True)
 
@@ -476,7 +487,10 @@ def test_assign_support_ok(monkeypatch, management_user, event_without_support, 
 
     allow_authenticated_user(monkeypatch, management_user)
 
-    monkeypatch.setattr("epicevents.services.events._require_support_collaborator", lambda session, support_contact_id: support_user)
+    monkeypatch.setattr(
+        "epicevents.services.events._require_support_collaborator",
+        lambda session, support_contact_id: support_user,
+    )
 
     event = assign_support(session, 2, support_user.id)
 
@@ -500,7 +514,10 @@ def test_assign_support_rejects_event_not_found(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    monkeypatch.setattr("epicevents.services.events._require_support_collaborator", lambda session, support_contact_id: fake_user)
+    monkeypatch.setattr(
+        "epicevents.services.events._require_support_collaborator",
+        lambda session, support_contact_id: fake_user,
+    )
 
     with pytest.raises(BusinessValidationError, match="event not found"):
         assign_support(session, 999, 20)
