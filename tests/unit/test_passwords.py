@@ -1,6 +1,7 @@
-from epicevents.security.passwords import hash_password, verify_password
-from epicevents.exceptions import BusinessValidationError
 import pytest
+
+from epicevents.exceptions import BusinessValidationError
+from epicevents.security.passwords import hash_password, validate_password_strength, verify_password
 
 
 def test_hash_password_returns_a_string():
@@ -22,3 +23,16 @@ def test_verify_password_failure():
 def test_hash_password_rejects_empty_string():
     with pytest.raises(BusinessValidationError, match="Password must be a non-empty string."):
         hash_password("")
+
+
+def test_validate_password_strength_accepts_valid_password():
+    validate_password_strength("ValidPass1!")
+
+
+@pytest.mark.parametrize(
+    "password",
+    ["Sec1!ab", "nouppercase1!", "NoDigitsHere!!", "NoSpecialChar1"],
+)
+def test_validate_password_strength_rejects_weak_passwords(password):
+    with pytest.raises(BusinessValidationError, match="password must be at least 8 characters"):
+        validate_password_strength(password)
