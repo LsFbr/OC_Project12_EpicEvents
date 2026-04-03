@@ -11,7 +11,7 @@ def test_support_cannot_create_client(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="support@test.com\nPassword123\n",
+        input="support@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output
@@ -75,7 +75,7 @@ def test_sales_cannot_assign_support(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="sales@test.com\nPassword123\n",
+        input="sales@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output
@@ -120,7 +120,7 @@ def test_management_cannot_create_event(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="management@test.com\nPassword123\n",
+        input="management@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output

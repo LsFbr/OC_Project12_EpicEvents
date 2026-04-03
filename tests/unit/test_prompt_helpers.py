@@ -171,18 +171,18 @@ def test_prompt_password_required_ok(monkeypatch):
 
     monkeypatch.setattr(
         "epicevents.cli.prompt_helpers.click.prompt",
-        lambda *args, **kwargs: "Password123",
+        lambda *args, **kwargs: "Password123!",
     )
 
     value = prompt_password("Password")
 
     assert echoed == []
-    assert value == "Password123"
+    assert value == "Password123!"
 
 
 def test_prompt_password_required_empty_then_ok(monkeypatch):
     echoed = capture_echo(monkeypatch)
-    prompts = iter(["", "Password123"])
+    prompts = iter(["", "Password123!"])
 
     monkeypatch.setattr(
         "epicevents.cli.prompt_helpers.click.prompt",
@@ -192,7 +192,7 @@ def test_prompt_password_required_empty_then_ok(monkeypatch):
     value = prompt_password("Password")
 
     assert echoed == [("Password is required.", True)]
-    assert value == "Password123"
+    assert value == "Password123!"
 
 
 def test_prompt_password_optional_empty_returns_none(monkeypatch):
@@ -211,7 +211,7 @@ def test_prompt_password_optional_empty_returns_none(monkeypatch):
 
 def test_prompt_password_too_short_then_ok(monkeypatch):
     echoed = capture_echo(monkeypatch)
-    prompts = iter(["short", "Password123"])
+    prompts = iter(["short", "Password123!"])
 
     monkeypatch.setattr(
         "epicevents.cli.prompt_helpers.click.prompt",
@@ -220,8 +220,14 @@ def test_prompt_password_too_short_then_ok(monkeypatch):
 
     value = prompt_password("Password")
 
-    assert echoed == [("Password must be at least 8 characters long.", True)]
-    assert value == "Password123"
+    assert echoed == [
+        (
+            "Password: password must be at least 8 characters long and contain at least one uppercase letter, "
+            "one digit, and one special character",
+            True,
+        )
+    ]
+    assert value == "Password123!"
 
 
 # -------------------------

@@ -53,7 +53,7 @@ def test_scrub_value_filters_sensitive_keys_in_dict():
     value = {
         "email": "user@example.com",
         "token": "secret-token",
-        "password": "Password123",
+        "password": "Password123!",
         "name": "Alice",
     }
 

@@ -339,7 +339,7 @@ def test_create_collaborator_rejects_short_password(monkeypatch, fake_user):
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(BusinessValidationError, match="password too short"):
+    with pytest.raises(BusinessValidationError, match="password must be at least 8 characters"):
         create_collaborator(session, 4, "Collab", "collab@example.com", "SALES", "short")
 
 
@@ -367,7 +367,7 @@ def test_create_collaborator_logs_business_event(monkeypatch, fake_user, sales_r
         full_name="New Collaborator",
         email="new.collaborator@example.com",
         role_name="SALES",
-        plain_password="Password123",
+        plain_password="Password123!",
     )
 
     assert captured["message"] == "collaborator_created"
@@ -601,7 +601,7 @@ def test_update_collaborator_rejects_short_password(monkeypatch, fake_user, coll
 
     allow_authenticated_user(monkeypatch, fake_user)
 
-    with pytest.raises(BusinessValidationError, match="password too short"):
+    with pytest.raises(BusinessValidationError, match="password must be at least 8 characters"):
         update_collaborator(session, 1, plain_password="short")
 
 

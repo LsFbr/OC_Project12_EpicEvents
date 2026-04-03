@@ -8,7 +8,7 @@ def test_end_to_end_business_flow(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="sales@test.com\nPassword123\n",
+        input="sales@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output
@@ -35,7 +35,7 @@ def test_end_to_end_business_flow(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="management@test.com\nPassword123\n",
+        input="management@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output
@@ -61,7 +61,7 @@ def test_end_to_end_business_flow(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="sales@test.com\nPassword123\n",
+        input="sales@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output
@@ -90,7 +90,7 @@ def test_end_to_end_business_flow(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="management@test.com\nPassword123\n",
+        input="management@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
 
@@ -112,7 +112,7 @@ def test_end_to_end_business_flow(runner, integration_env):
     result = runner.invoke(
         cli,
         ["login"],
-        input="support@test.com\nPassword123\n",
+        input="support@test.com\nPassword123!\n",
     )
     assert result.exit_code == 0
     assert "Login successful" in result.output

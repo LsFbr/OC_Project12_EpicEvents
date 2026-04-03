@@ -29,7 +29,7 @@ def test_login_command_success(monkeypatch):
     called = {}
 
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "user@example.com")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
 
     def fake_login(email, password):
         called["email"] = email
@@ -39,7 +39,7 @@ def test_login_command_success(monkeypatch):
 
     cli_module.login_command.callback()
 
-    assert called == {"email": "user@example.com", "password": "Password123"}
+    assert called == {"email": "user@example.com", "password": "Password123!"}
     assert echoed == [("Login successful", False)]
 
 
@@ -47,7 +47,7 @@ def test_login_command_failure(monkeypatch):
     echoed = capture_echo(monkeypatch)
 
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "user@example.com")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
 
     def login_failure(*args, **kwargs):
         raise InvalidCredentialsError("Invalid email or password")
@@ -64,7 +64,7 @@ def test_login_command_unexpected_error(monkeypatch):
     captured = {}
 
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "user@example.com")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
 
     def login_unexpected_error(*args, **kwargs):
         raise RuntimeError("unexpected error test")
@@ -181,7 +181,7 @@ def test_collaborators_create_command_success(monkeypatch, fake_session, managem
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda *args, **kwargs: "Collab Four")
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "collabfour@example.com")
     monkeypatch.setattr("epicevents.cli.cli.prompt_role", lambda *args, **kwargs: "SALES")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
     monkeypatch.setattr(
         "epicevents.cli.cli.create_collaborator",
         lambda *args, **kwargs: collaborator,
@@ -207,7 +207,7 @@ def test_collaborators_update_command_failure(monkeypatch, fake_session, managem
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda *args, **kwargs: "Updated User")
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "updated@example.com")
     monkeypatch.setattr("epicevents.cli.cli.prompt_role", lambda *args, **kwargs: "SUPPORT")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
 
     def update_collaborator_failure(*args, **kwargs):
         raise BusinessValidationError("Failure test")
@@ -232,7 +232,7 @@ def test_collaborators_update_command_unexpected_error(monkeypatch, fake_session
     monkeypatch.setattr("epicevents.cli.cli.prompt_text", lambda *args, **kwargs: "Updated User")
     monkeypatch.setattr("epicevents.cli.cli.prompt_email", lambda *args, **kwargs: "updated@example.com")
     monkeypatch.setattr("epicevents.cli.cli.prompt_role", lambda *args, **kwargs: "SUPPORT")
-    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123")
+    monkeypatch.setattr("epicevents.cli.cli.prompt_password", lambda *args, **kwargs: "Password123!")
 
     def update_collaborator_unexpected_error(*args, **kwargs):
         raise RuntimeError("unexpected error test")
