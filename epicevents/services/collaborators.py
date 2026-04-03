@@ -6,11 +6,10 @@ from typing import Any
 from epicevents.monitoring.sentry import capture_business_event
 from epicevents.models.collaborator import Collaborator
 from epicevents.models.role import Role
-from epicevents.security.passwords import hash_password
+from epicevents.security.passwords import hash_password, validate_password_strength
 from epicevents.auth.utils import require_authentication
 from epicevents.security.permissions import READ_ALL, COLLAB_CREATE, COLLAB_UPDATE, COLLAB_DELETE, require_permission
 from epicevents.auth.current_user import get_current_user
-from epicevents.constants import PASSWORD_MIN_LENGTH
 from epicevents.exceptions import BusinessValidationError
 
 
@@ -63,8 +62,9 @@ def create_collaborator(
     if not role_name:
         raise BusinessValidationError("role_name is required")
 
-    if len(plain_password or "") < PASSWORD_MIN_LENGTH:
-        raise BusinessValidationError("password too short")
+    if not plain_password:
+            raise BusinessValidationError("password is required")
+    validate_password_strength(plain_password)
 
     role = session.query(Role).filter(Role.name == role_name).one_or_none()
     if role is None:
@@ -152,8 +152,7 @@ def update_collaborator(
         plain_password = (fields["plain_password"] or "").strip()
         if not plain_password:
             raise BusinessValidationError("password is required")
-        if len(plain_password) < PASSWORD_MIN_LENGTH:
-            raise BusinessValidationError("password too short")
+        validate_password_strength(plain_password)
 
         collaborator.password_hash = hash_password(plain_password)
 
