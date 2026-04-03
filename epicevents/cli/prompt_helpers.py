@@ -2,7 +2,9 @@ import click
 import re
 from datetime import datetime
 
-from epicevents.constants import PASSWORD_MIN_LENGTH, ROLE_NAMES
+from epicevents.constants import ROLE_NAMES
+from epicevents.exceptions import BusinessValidationError
+from epicevents.security.passwords import validate_password_strength
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -95,11 +97,10 @@ def prompt_password(label: str, required: bool = True) -> str | None:
         if not value:
             return None
 
-        if len(value) < PASSWORD_MIN_LENGTH:
-            click.echo(
-                f"{label} must be at least {PASSWORD_MIN_LENGTH} characters long.",
-                err=True,
-            )
+        try:
+            validate_password_strength(value)
+        except BusinessValidationError as exc:
+            click.echo(f"{label}: {exc}", err=True)
             continue
 
         return value
