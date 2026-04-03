@@ -45,21 +45,21 @@ def integration_env(tmp_path, monkeypatch):
             employee_number=10,
             full_name="Management User",
             email="management@test.com",
-            password_hash=hash_password("Password123"),
+            password_hash=hash_password("Password123!"),
             role_id=management_role.id,
         )
         sales = Collaborator(
             employee_number=20,
             full_name="Sales User",
             email="sales@test.com",
-            password_hash=hash_password("Password123"),
+            password_hash=hash_password("Password123!"),
             role_id=sales_role.id,
         )
         support = Collaborator(
             employee_number=30,
             full_name="Support User",
             email="support@test.com",
-            password_hash=hash_password("Password123"),
+            password_hash=hash_password("Password123!"),
             role_id=support_role.id,
         )
 
