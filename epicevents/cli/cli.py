@@ -62,7 +62,7 @@ def cli():
 def login_command():
     """Login to the application."""
     email = prompt_email("Email")
-    password = prompt_password("Password")
+    password = prompt_password("Password", validate=False)
     try:
         login(email, password)
         click.echo("Login successful")
