@@ -347,6 +347,7 @@ python epicevents.py contracts update
 python epicevents.py events list (options: --support-contact-id, --mine)
 python epicevents.py events create
 python epicevents.py events update
+python epicevents.py events assign-support
 ```
 
 ## 16. Roles and Permissions
