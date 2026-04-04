@@ -74,12 +74,13 @@ def prompt_email(label: str, required: bool = True) -> str | None:
         return value
 
 
-def prompt_password(label: str, required: bool = True) -> str | None:
+def prompt_password(label: str, required: bool = True, validate: bool = True) -> str | None:
     """
     Prompt the user for a password input.
     Args:
         label: The label to display for the input.
         required: Whether the input is required.
+        validate: Whether to validate the password strength.
     Returns:
         The input value.
     """
@@ -97,11 +98,12 @@ def prompt_password(label: str, required: bool = True) -> str | None:
         if not value:
             return None
 
-        try:
-            validate_password_strength(value)
-        except BusinessValidationError as exc:
-            click.echo(f"{label}: {exc}", err=True)
-            continue
+        if validate:
+            try:
+                validate_password_strength(value)
+            except BusinessValidationError as exc:
+                click.echo(f"{label}: {exc}", err=True)
+                continue
 
         return value
 
